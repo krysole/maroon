@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+//
+// The Maroon Programming Language
+//
+// Copyright 2018 Lorenz Pretterhofer <krysole@alexicalmistake.com>
+//
+// Permission to use, copy, modify, and distribute this work for any
+// purpose with or without fee is hereby granted, provided that the above
+// copyright notice and this permission notice appear in all copies.
+//
+// THE WORK IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+// WITH REGARD TO THIS WORK INCLUDING ALL IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+// ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+// WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+// ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+// OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS WORK.
+//
+"use strict";
+
+global.BigNumber = require("bignumber.js");
+
+
+let fs       = require("fs");
+let inspect  = require("util").inspect;
+
+let Symtab   = require("./Symtab.js");
+let Platform = require("./Platform.js");
+let Parser   = require("./Parser.js");
+
+
+Object.defineProperty(Array.prototype, "excludes", {
+  value: function (object) { return !this.includes(object); },
+  enumerable: false,
+  configurable: true
+});
+
+
+function main(argv) {
+  // For now we're ignoring parameter handing.
+  let targetPath = null;
+  
+  
+  // Create symbol table for compilation unit.
+  let symtab = new Symtab();
+  
+  
+  // Intern platform definitions.
+  new Platform().handle(symtab);
+  
+  
+  // Parse source unit.
+  let sourcePath   = "./main.mn";
+  let sourceString = fs.readFileSync(sourcePath, "utf8");
+  let ast          = new Parser().match("unit", sourceString, sourcePath);
+  if (true) {
+    output(targetPath, inspect(ast, { depth: null }) + "\n");
+  }
+  
+  
+  throw new Error();
+}
+
+function abort(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function output(path, string) {
+  if (path != null) fs.writeFileSync(path, string);
+  else              process.stdout.write(string);
+  process.exit(0);
+}
+
+function usage() {
+  console.error(`usage: maroon`);
+  console.error(``);
+  process.exit(1);
+}
+
+
+setTimeout(_ => {
+  main(process.ARGV);
+});
