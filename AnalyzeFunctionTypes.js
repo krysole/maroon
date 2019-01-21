@@ -17,12 +17,33 @@
 //
 "use strict";
 
+let Symtab   = require("./Symtab.js");
+let unify    = require("./unify.js");
 
-module.exports =
-class Platform {
-  
-  handle(symtab) {
-    // TODO
+
+function AnalyzeTypeInferencing(ast) {
+  if (ast == null) {
   }
   
-}
+  
+  else if (ast.tag === "Unit") {
+    Symtab.each(ast, false, AnalyzeTypeInferencing);
+  }
+  
+  
+  else if (ast.tag === "FunctionDeclaration") {
+    ast.type = { tag: "FunctionType", parameters: ast.parameters, return: ast.return };
+  }
+  
+  
+  else if (ast.tag.match(/Type$/)) {
+  }
+  
+  
+  else {
+    throw new Error(`Unrecognized ast node tag ${ast.tag}.`);
+  }
+};
+
+
+module.exports = AnalyzeTypeInferencing;

@@ -236,7 +236,7 @@ class Parser {
       RESULT = this.p("}");
       if (RESULT === FAIL) break;
       
-      RESULT = { tag: "StructDeclaration", name: n, fields: fs };
+      RESULT = { tag: "StructTypeDeclaration", name: n, fields: fs };
       if (RESULT === FAIL) break;
       
       break;
@@ -349,7 +349,7 @@ class Parser {
   
   functionDeclaration() {
     let RESULT = FAIL;
-    let n, ps, r, ss;
+    let n, ps, r, b;
     
     let MEMO = this.$memotab[this.$position];
     if (MEMO.rule === "functionDeclaration") {
@@ -369,7 +369,7 @@ class Parser {
         n = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = this.p("(");
+        RESULT = this.p("[");
         if (RESULT === FAIL) break;
         
         while (true) { // DELIMITED
@@ -401,44 +401,18 @@ class Parser {
         ps = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = this.p(")");
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.p(":");
+        RESULT = this.p("]");
         if (RESULT === FAIL) break;
         
         RESULT = this.type();
         r = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = this.p("{");
+        RESULT = this.block();
+        b = RESULT;
         if (RESULT === FAIL) break;
         
-        while (true) { // REPEAT
-          let ARRAY = [];
-          
-          while (true) {
-            let INITPOS = this.$position;
-            
-            RESULT = this.statement();
-            if (RESULT === FAIL) {
-              this.$position = INITPOS;
-              break;
-            }
-            
-            ARRAY.push(RESULT);
-          }
-          
-          RESULT = ARRAY;
-          break;
-        }
-        ss = RESULT;
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.p("}");
-        if (RESULT === FAIL) break;
-        
-        RESULT = { tag: "FunctionDeclaration", name: n, parameters: ps, return: r, statements: ss };
+        RESULT = { tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: b };
         if (RESULT === FAIL) break;
         
         break;
@@ -454,7 +428,7 @@ class Parser {
         n = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = this.p("(");
+        RESULT = this.p("[");
         if (RESULT === FAIL) break;
         
         while (true) { // DELIMITED
@@ -486,10 +460,7 @@ class Parser {
         ps = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = this.p(")");
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.p(":");
+        RESULT = this.p("]");
         if (RESULT === FAIL) break;
         
         RESULT = this.type();
@@ -499,7 +470,7 @@ class Parser {
         RESULT = this.p(";");
         if (RESULT === FAIL) break;
         
-        RESULT = { tag: "FunctionDeclaration", name: n, parameters: ps, return: r, statements: null };
+        RESULT = { tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: null };
         if (RESULT === FAIL) break;
         
         break;
@@ -1664,18 +1635,21 @@ class Parser {
       
       this.$position = INITPOS;
       while (true) { // SEQUENCE
-        RESULT = this.vectorInfixExpression();
+        RESULT = this.typecastExpression();
         l = RESULT;
         if (RESULT === FAIL) break;
         
         RESULT = this.p("=");
         if (RESULT === FAIL) break;
         
-        RESULT = this.expression();
+        RESULT = this.assignmentExpression();
         e = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = { tag: "AssignmentExpression", location: l, expression: e };
+        RESULT = ((l.tag === "LookupPropertyExpression") ? null : FAIL);
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "SetPropertyExpression", subject: l.subject, name: l.selector, argument: e };
         if (RESULT === FAIL) break;
         
         break;
@@ -1683,13 +1657,289 @@ class Parser {
       if (RESULT !== FAIL) break;
       
       this.$position = INITPOS;
-      RESULT = this.vectorInfixExpression();
+      while (true) { // SEQUENCE
+        RESULT = this.typecastExpression();
+        l = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p("=");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.assignmentExpression();
+        e = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = ((l.tag === "LookupExpression") ? null : FAIL);
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "SetExpression", name: l.name, a: e };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
+      
+      this.$position = INITPOS;
+      RESULT = this.typecastExpression();
       if (RESULT !== FAIL) break;
       
       break;
     }
     
     MEMO.rule = "assignmentExpression";
+    MEMO.position = this.$position;
+    MEMO.result = RESULT;
+    
+    return RESULT;
+  }
+  
+  typecastExpression() {
+    let RESULT = FAIL;
+    let a, t;
+    
+    let MEMO = this.$memotab[this.$position];
+    if (MEMO.rule === "typecastExpression") {
+      this.$position = MEMO.position;
+      return MEMO.result;
+    }
+    
+    while (true) { // SEQUENCE
+      RESULT = this.conditionalExpression();
+      a = RESULT;
+      if (RESULT === FAIL) break;
+      
+      while (true) { // REPEAT
+        let ARRAY = [];
+        
+        while (true) {
+          let INITPOS = this.$position;
+          
+          while (true) { // SEQUENCE
+            RESULT = this.id("as");
+            if (RESULT === FAIL) break;
+            
+            RESULT = this.conditionalExpression();
+            t = RESULT;
+            if (RESULT === FAIL) break;
+            
+            RESULT = { tag: "TypecastExpression", type: t, argument: a };
+            a = RESULT;
+            if (RESULT === FAIL) break;
+            
+            break;
+          }
+          if (RESULT === FAIL) {
+            this.$position = INITPOS;
+            break;
+          }
+          
+          ARRAY.push(RESULT);
+        }
+        
+        RESULT = ARRAY;
+        break;
+      }
+      if (RESULT === FAIL) break;
+      
+      RESULT = a;
+      if (RESULT === FAIL) break;
+      
+      break;
+    }
+    
+    MEMO.rule = "typecastExpression";
+    MEMO.position = this.$position;
+    MEMO.result = RESULT;
+    
+    return RESULT;
+  }
+  
+  conditionalExpression() {
+    let RESULT = FAIL;
+    let c, t, f;
+    
+    let MEMO = this.$memotab[this.$position];
+    if (MEMO.rule === "conditionalExpression") {
+      this.$position = MEMO.position;
+      return MEMO.result;
+    }
+    
+    while (true) { // CHOICE
+      let INITPOS = this.$position;
+      
+      this.$position = INITPOS;
+      while (true) { // SEQUENCE
+        RESULT = this.comparisonExpression();
+        c = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p("?");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.conditionalExpression();
+        t = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p(":");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.conditionalExpression();
+        f = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "ConditionalExpression", condition: c, consiquent: t, alternative: f };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
+      
+      this.$position = INITPOS;
+      RESULT = this.comparisonExpression();
+      if (RESULT !== FAIL) break;
+      
+      break;
+    }
+    
+    MEMO.rule = "conditionalExpression";
+    MEMO.position = this.$position;
+    MEMO.result = RESULT;
+    
+    return RESULT;
+  }
+  
+  comparisonExpression() {
+    let RESULT = FAIL;
+    let a, o, b;
+    
+    let MEMO = this.$memotab[this.$position];
+    if (MEMO.rule === "comparisonExpression") {
+      this.$position = MEMO.position;
+      return MEMO.result;
+    }
+    
+    while (true) { // SEQUENCE
+      RESULT = this.vectorInfixExpression();
+      a = RESULT;
+      if (RESULT === FAIL) break;
+      
+      while (true) { // CHOICE
+        let INITPOS = this.$position;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p("==");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: "==", a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p("/=");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: "/=", a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p(">=");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: ">=", a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p(">");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: ">",  a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p("<=");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: "<=", a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        while (true) { // SEQUENCE
+          RESULT = this.p("<");
+          o = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = this.vectorInfixExpression();
+          b = RESULT;
+          if (RESULT === FAIL) break;
+          
+          RESULT = { tag: "ComparisonExpression", o: "<",  a: a, b: b };
+          if (RESULT === FAIL) break;
+          
+          break;
+        }
+        if (RESULT !== FAIL) break;
+        
+        this.$position = INITPOS;
+        RESULT = a;
+        if (RESULT !== FAIL) break;
+        
+        break;
+      }
+      if (RESULT === FAIL) break;
+      
+      break;
+    }
+    
+    MEMO.rule = "comparisonExpression";
     MEMO.position = this.$position;
     MEMO.result = RESULT;
     
@@ -2143,7 +2393,7 @@ class Parser {
   
   secondaryExpression() {
     let RESULT = FAIL;
-    let e, n, as, a;
+    let e, n, as;
     
     let MEMO = this.$memotab[this.$position];
     if (MEMO.rule === "secondaryExpression") {
@@ -2152,14 +2402,8 @@ class Parser {
     }
     
     while (true) { // SEQUENCE
-      RESULT = this.log("secondaryExpression start");
-      if (RESULT === FAIL) break;
-      
       RESULT = this.primaryExpression();
       e = RESULT;
-      if (RESULT === FAIL) break;
-      
-      RESULT = this.log("secondaryExpression after primaryExpression");
       if (RESULT === FAIL) break;
       
       while (true) { // REPEAT
@@ -2180,7 +2424,7 @@ class Parser {
               n = RESULT;
               if (RESULT === FAIL) break;
               
-              RESULT = { tag: "FieldExpression",     subject: e, name: n };
+              RESULT = { tag: "LookupPropertyExpression", subject: e, name: n };
               e = RESULT;
               if (RESULT === FAIL) break;
               
@@ -2190,7 +2434,7 @@ class Parser {
             
             this.$position = INITPOS;
             while (true) { // SEQUENCE
-              RESULT = this.p("(");
+              RESULT = this.p("[");
               if (RESULT === FAIL) break;
               
               while (true) { // DELIMITED
@@ -2222,30 +2466,10 @@ class Parser {
               as = RESULT;
               if (RESULT === FAIL) break;
               
-              RESULT = this.p(")");
-              if (RESULT === FAIL) break;
-              
-              RESULT = { tag: "CallExpression",      subject: e, arguments: as };
-              e = RESULT;
-              if (RESULT === FAIL) break;
-              
-              break;
-            }
-            if (RESULT !== FAIL) break;
-            
-            this.$position = INITPOS;
-            while (true) { // SEQUENCE
-              RESULT = this.p("[");
-              if (RESULT === FAIL) break;
-              
-              RESULT = this.expression();
-              a = RESULT;
-              if (RESULT === FAIL) break;
-              
               RESULT = this.p("]");
               if (RESULT === FAIL) break;
               
-              RESULT = { tag: "SubscriptExpression", subject: e, argument: a };
+              RESULT = { tag: "CallExpression", subject: e, arguments: as };
               e = RESULT;
               if (RESULT === FAIL) break;
               
@@ -2296,25 +2520,6 @@ class Parser {
       
       this.$position = INITPOS;
       while (true) { // SEQUENCE
-        RESULT = this.p("[");
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.expression();
-        a = RESULT;
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.p("]");
-        if (RESULT === FAIL) break;
-        
-        RESULT = { tag: "DereferenceExpression", subject: a };
-        if (RESULT === FAIL) break;
-        
-        break;
-      }
-      if (RESULT !== FAIL) break;
-      
-      this.$position = INITPOS;
-      while (true) { // SEQUENCE
         RESULT = this.p("(");
         if (RESULT === FAIL) break;
         
@@ -2334,14 +2539,27 @@ class Parser {
       
       this.$position = INITPOS;
       while (true) { // SEQUENCE
-        RESULT = this.log("primaryExpression start");
+        RESULT = this.p("[");
         if (RESULT === FAIL) break;
         
+        RESULT = this.expression();
+        a = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p("]");
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "DereferenceExpression", a: a };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
+      
+      this.$position = INITPOS;
+      while (true) { // SEQUENCE
         RESULT = this.local();
         n = RESULT;
-        if (RESULT === FAIL) break;
-        
-        RESULT = this.log("primaryExpression after local");
         if (RESULT === FAIL) break;
         
         RESULT = { tag: "LookupExpression", name: n };
@@ -2523,9 +2741,6 @@ class Parser {
         RESULT = this.p("[");
         if (RESULT === FAIL) break;
         
-        RESULT = this.id("fn");
-        if (RESULT === FAIL) break;
-        
         RESULT = this.p("(");
         if (RESULT === FAIL) break;
         
@@ -2590,7 +2805,7 @@ class Parser {
         RESULT = this.p("]");
         if (RESULT === FAIL) break;
         
-        RESULT = { tag: "PointerType", type: t };
+        RESULT = { tag: "PointerType", target: t };
         if (RESULT === FAIL) break;
         
         break;
@@ -2603,7 +2818,7 @@ class Parser {
         n = RESULT;
         if (RESULT === FAIL) break;
         
-        RESULT = { tag: "LookupType", name: n };
+        RESULT = { tag: "LookupExpression", name: n };
         if (RESULT === FAIL) break;
         
         break;
@@ -2622,7 +2837,7 @@ class Parser {
   
   variable() {
     let RESULT = FAIL;
-    let n, e;
+    let n, t, e;
     
     let MEMO = this.$memotab[this.$position];
     if (MEMO.rule === "variable") {
@@ -2630,20 +2845,75 @@ class Parser {
       return MEMO.result;
     }
     
-    while (true) { // SEQUENCE
-      RESULT = this.local();
-      n = RESULT;
-      if (RESULT === FAIL) break;
+    while (true) { // CHOICE
+      let INITPOS = this.$position;
       
-      RESULT = this.p("=");
-      if (RESULT === FAIL) break;
+      this.$position = INITPOS;
+      while (true) { // SEQUENCE
+        RESULT = this.local();
+        n = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p(":");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.type();
+        t = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p("=");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.expression();
+        e = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "VariableDeclaration", name: n, type: t,    value: e };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
       
-      RESULT = this.expression();
-      e = RESULT;
-      if (RESULT === FAIL) break;
+      this.$position = INITPOS;
+      while (true) { // SEQUENCE
+        RESULT = this.local();
+        n = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p(":");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.type();
+        t = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "VariableDeclaration", name: n, type: t,    value: null };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
       
-      RESULT = { tag: "Variable", name: n, expression: e };
-      if (RESULT === FAIL) break;
+      this.$position = INITPOS;
+      while (true) { // SEQUENCE
+        RESULT = this.local();
+        n = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.p("=");
+        if (RESULT === FAIL) break;
+        
+        RESULT = this.expression();
+        e = RESULT;
+        if (RESULT === FAIL) break;
+        
+        RESULT = { tag: "VariableDeclaration", name: n, type: null, value: e };
+        if (RESULT === FAIL) break;
+        
+        break;
+      }
+      if (RESULT !== FAIL) break;
       
       break;
     }
@@ -2657,7 +2927,7 @@ class Parser {
   
   parameter() {
     let RESULT = FAIL;
-    let n, t;
+    let t, n;
     
     let MEMO = this.$memotab[this.$position];
     if (MEMO.rule === "parameter") {
@@ -2666,15 +2936,12 @@ class Parser {
     }
     
     while (true) { // SEQUENCE
-      RESULT = this.local();
-      n = RESULT;
-      if (RESULT === FAIL) break;
-      
-      RESULT = this.p(":");
-      if (RESULT === FAIL) break;
-      
       RESULT = this.type();
       t = RESULT;
+      if (RESULT === FAIL) break;
+      
+      RESULT = this.local();
+      n = RESULT;
       if (RESULT === FAIL) break;
       
       RESULT = { tag: "Parameter", name: n, type: t };
@@ -2765,7 +3032,7 @@ class Parser {
       v = RESULT;
       if (RESULT === FAIL) break;
       
-      RESULT = { tag: "IntegerLiteral", signed: null, width: null, value: v };
+      RESULT = { tag: "IntegerLiteral", value: v };
       if (RESULT === FAIL) break;
       
       break;
@@ -2853,7 +3120,7 @@ class Parser {
       v = RESULT;
       if (RESULT === FAIL) break;
       
-      RESULT = { tag: "IntegerLiteral", signed: null, width: null, value: v };
+      RESULT = { tag: "IntegerLiteral", value: v };
       if (RESULT === FAIL) break;
       
       break;
@@ -2938,7 +3205,7 @@ class Parser {
       v = RESULT;
       if (RESULT === FAIL) break;
       
-      RESULT = { tag: "IntegerLiteral", signed: null, width: null, value: v };
+      RESULT = { tag: "IntegerLiteral", value: v };
       if (RESULT === FAIL) break;
       
       break;
@@ -3026,7 +3293,7 @@ class Parser {
       v = RESULT;
       if (RESULT === FAIL) break;
       
-      RESULT = { tag: "IntegerLiteral", signed: null, width: null, value: v };
+      RESULT = { tag: "IntegerLiteral", value: v };
       if (RESULT === FAIL) break;
       
       break;

@@ -21,12 +21,19 @@
 global.BigNumber = require("bignumber.js");
 
 
-let fs       = require("fs");
-let inspect  = require("util").inspect;
+let fs                      = require("fs");
+let inspect                 = require("util").inspect;
 
-let Symtab   = require("./Symtab.js");
-let Platform = require("./Platform.js");
-let Parser   = require("./Parser.js");
+let Parser                  = require("./Parser.js");
+
+let InstallPlatform         = require("./InstallPlatform.js");
+let InstallSourceUnit       = require("./InstallSourceUnit.js");
+
+let Simplify                = require("./Simplify.js");
+
+let AnalyzeFunctionTypes    = require("./AnalyzeFunctionTypes.js");
+let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
+let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
 
 
 Object.defineProperty(Array.prototype, "excludes", {
@@ -35,48 +42,68 @@ Object.defineProperty(Array.prototype, "excludes", {
   configurable: true
 });
 
+Object.transmute = function transmute(target, source) {
+  for (let name in target) {
+    delete target[name];
+  }
+  
+  for (let name in source) {
+    target[name] = source[name];
+  }
+};
+
+Object.hasOwnProperty = function hasOwnProperty(object, name) {
+  return Object.prototype.hasOwnProperty.call(object, name);
+};
+
 
 function main(argv) {
-  // For now we're ignoring parameter handing.
-  let targetPath = null;
+  let unit        = { tag: "Unit", parent: null, decls: {} };
+  let sourcePaths = ["./main.mn", "libc.mn"];
   
   
-  // Create symbol table for compilation unit.
-  let symtab = new Symtab();
+  InstallPlatform.install(unit);
   
   
-  // Intern platform definitions.
-  new Platform().handle(symtab);
-  
-  
-  // Parse source unit.
-  let sourcePath   = "./main.mn";
-  let sourceString = fs.readFileSync(sourcePath, "utf8");
-  let ast          = new Parser().match("unit", sourceString, sourcePath);
-  if (true) {
-    output(targetPath, inspect(ast, { depth: null }) + "\n");
+  for (let sourcePath of sourcePaths) {
+    let sourcePath   = "./main.mn";
+    let sourceString = fs.readFileSync(sourcePath, "utf8");
+    let sourceAst    = new Parser().match("unit", sourceString, sourcePath);
+    
+    InstallSourceUnit.install(unit, sourceAst);
   }
   
   
+  Simplify(unit);
+  
+  
+  AnalyzeFunctionTypes(unit);
+  AnalyzeTypeInferencing(unit);
+  AnalyzeTypePropagation(unit);
+  
+  
+  output(null, inspect(unit, { depth: null }) + "\n");
+  
+  
   throw new Error();
-}
+};
 
 function abort(message) {
   console.error(message);
   process.exit(1);
-}
+};
 
 function output(path, string) {
   if (path != null) fs.writeFileSync(path, string);
   else              process.stdout.write(string);
   process.exit(0);
-}
+};
 
 function usage() {
   console.error(`usage: maroon`);
   console.error(``);
   process.exit(1);
-}
+};
 
 
 setTimeout(_ => {

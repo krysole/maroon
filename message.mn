@@ -1,0 +1,19 @@
+--
+-- message.mn
+--
+
+procedure main[i32 argc, [char][] argv] halts {
+  let message = null as [char]
+  
+  assert[argc == 1]      -- aborts if 'argc == 1' is false
+  given argv[0] as u32 { -- aborts if 'argv[0] as u32' returns nonzero status
+    case 1 do message = "This is the first message."
+    case 2 do message = "This is the second message."
+    case 3 do message = "This is the third message."
+    else      message = "This is the default message."
+  }
+  
+  puts[message]
+  
+  exit[0]
+}

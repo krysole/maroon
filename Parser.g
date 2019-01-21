@@ -18,7 +18,7 @@
 
 grammar Parser {
   
-  unit
+  unit 
     = declaration*:ds end
       !{ tag: "Source", declarations: ds }
     ;
@@ -32,7 +32,7 @@ grammar Parser {
   
   structDeclaration
     = id("struct") local:n p("{") structField*:fs p("}")
-      !{ tag: "StructDeclaration", name: n, fields: fs }
+      !{ tag: "StructTypeDeclaration", name: n, fields: fs }
     ;
   structField
     = id:n p(":") type:t p(";")
@@ -45,10 +45,10 @@ grammar Parser {
     ;
   
   functionDeclaration
-    = id("fn") local:n p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p("{") statement*:ss p("}")
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, statements: ss }
-    | id("fn") local:n p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p(";")
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, statements: null }
+    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps p("]") type:r block:b
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: b }
+    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps p("]") type:r p(";")
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: null }
     ;
   
   
@@ -183,9 +183,38 @@ grammar Parser {
     ;
   
   assignmentExpression
-    = vectorInfixExpression:l p("=") expression:e
-      !{ tag: "AssignmentExpression", location: l, expression: e }
-    | vectorInfixExpression
+    = typecastExpression:l p("=") assignmentExpression:e
+      ?(l.tag === "LookupPropertyExpression")
+      !{ tag: "SetPropertyExpression", subject: l.subject, name: l.selector, argument: e }
+    | typecastExpression:l p("=") assignmentExpression:e
+      ?(l.tag === "LookupExpression")
+      !{ tag: "SetExpression", name: l.name, a: e }
+    | typecastExpression
+    ;
+  
+  typecastExpression
+    = conditionalExpression:a
+      ( id("as") conditionalExpression:t !{ tag: "TypecastExpression", type: t, argument: a }:a
+      )*
+      !a
+    ;
+  
+  conditionalExpression
+    = comparisonExpression:c p("?") conditionalExpression:t p(":") conditionalExpression:f
+      !{ tag: "ConditionalExpression", condition: c, consiquent: t, alternative: f }
+    | comparisonExpression
+    ;
+    
+  comparisonExpression
+    = vectorInfixExpression:a
+      ( p("=="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "==", a: a, b: b }
+      | p("/="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "/=", a: a, b: b }
+      | p(">="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: ">=", a: a, b: b }
+      | p(">"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", o: ">",  a: a, b: b }
+      | p("<="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "<=", a: a, b: b }
+      | p("<"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "<",  a: a, b: b }
+      |                                   !a
+      )
     ;
   
   vectorInfixExpression
@@ -229,19 +258,18 @@ grammar Parser {
     ;
   
   secondaryExpression
-    = log("secondaryExpression start") primaryExpression:e log("secondaryExpression after primaryExpression")
-      ( p(".") id:n                               !{ tag: "FieldExpression",     subject: e, name: n }:e
-      | p("(") ( expression ; p(",") )*:as p(")") !{ tag: "CallExpression",      subject: e, arguments: as }:e
-      | p("[") expression:a p("]")                !{ tag: "SubscriptExpression", subject: e, argument: a }:e
+    = primaryExpression:e
+      ( p(".") id:n                               !{ tag: "LookupPropertyExpression", subject: e, name: n }:e
+      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression", subject: e, arguments: as }:e
       )*
       !e
     ;
   
   primaryExpression
-    = p("[") expression:a p("]") !{ tag: "DereferenceExpression", subject: a }
-    | p("(") expression:a p(")") !a
+    = p("(") expression:a p(")") !a
+    | p("[") expression:a p("]") !{ tag: "DereferenceExpression", a: a }
     
-    | log("primaryExpression start") local:n log("primaryExpression after local") !{ tag: "LookupExpression", name: n }
+    | local:n !{ tag: "LookupExpression", name: n }
     
     | binintLiteral
     | octintLiteral
@@ -262,23 +290,25 @@ grammar Parser {
       !t
     ;
   primaryType
-    = p("[") id("fn") p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p("]")
+    = p("[") p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p("]")
       !{ tag: "FunctionType", parameters: ps, return: r }
     | p("[") type:t p("]")
-      !{ tag: "PointerType", type: t }
+      !{ tag: "PointerType", target: t }
     | local:n
-      !{ tag: "LookupType", name: n }
+      !{ tag: "LookupExpression", name: n }
     ;
   
   
   variable
-    = local:n ( p("=") expression:e )
-      !{ tag: "Variable", name: n, expression: e }
+    = local:n p(":") type:t p("=") expression:e !{ tag: "VariableDeclaration", name: n, type: t,    value: e }
+    | local:n p(":") type:t                     !{ tag: "VariableDeclaration", name: n, type: t,    value: null }
+    | local:n               p("=") expression:e !{ tag: "VariableDeclaration", name: n, type: null, value: e }
+      
     ;
     
     
   parameter
-    = local:n p(":") type:t
+    = type:t local:n
       !{ tag: "Parameter", name: n, type: t }
     ;
   
@@ -286,22 +316,22 @@ grammar Parser {
   binintLiteral
     = ws* char("0") char("b") ( bin | char("_") )+:ds
       !(new BigNumber(ds.join("").replace(/_/g, ""), 2)):v
-      !{ tag: "IntegerLiteral", signed: null, width: null, value: v }
+      !{ tag: "IntegerLiteral", value: v }
     ;
   octintLiteral
     = ws* char("0") char("o") ( oct | char("_") )+:ds
       !(new BigNumber(ds.join("").replace(/_/g, ""), 8)):v
-      !{ tag: "IntegerLiteral", signed: null, width: null, value: v }
+      !{ tag: "IntegerLiteral", value: v }
     ;
   decintLiteral
     = ws* dec:d ( dec | char("_") )*:ds
       !(new BigNumber((d + ds.join("")).replace(/_/g, ""), 8)):v
-      !{ tag: "IntegerLiteral", signed: null, width: null, value: v }
+      !{ tag: "IntegerLiteral", value: v }
     ;
   hexintLiteral
     = ws* char("0") char("x") ( hex | char("_") )+:ds
       !(new BigNumber(ds.join("").replace(/_/g, ""), 16)):v
-      !{ tag: "IntegerLiteral", signed: null, width: null, value: v }
+      !{ tag: "IntegerLiteral", value: v }
     ;
   stringLiteral
     = ws* char("\"") ( ~char("\\\"\r\n") char | stringEscapeCharacter )*:cs char("\"")
