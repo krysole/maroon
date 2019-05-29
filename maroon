@@ -74,7 +74,13 @@ function main(argv) {
   }
   
   
+  // output(null, inspect(unit, { depth: null }) + "\n");
+  
+  
   Simplify(unit);
+  
+  
+  // output(null, inspect(unit, { depth: null }) + "\n");
   
   
   AnalyzeFunctionTypes(unit);
@@ -83,6 +89,12 @@ function main(argv) {
   
   
   output(null, inspect(unit, { depth: null }) + "\n");
+  
+  
+  GenerateAsm(unit);
+  
+  
+  output(null, unit.asm);
   
   
   throw new Error();

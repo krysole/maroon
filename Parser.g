@@ -84,14 +84,14 @@ grammar Parser {
   ifStatement
     = id("if") expression:c
       ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | block:f )?
+      ( id("else") ~p("{") statement:f | block:f | !null:f )
       !{ tag: "IfStatement", negated: false, condition: c, consiquent: t, alternative: f }
     ;
   
   unlessStatement
     = id("unless") expression:c
       ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | block:f )?
+      ( id("else") ~p("{") statement:f | block:f | !null:f )
       !{ tag: "IfStatement", negated: true, condition: c, consiquent: t, alternative: f }
     ;
   
@@ -183,25 +183,25 @@ grammar Parser {
     ;
   
   assignmentExpression
-    = typecastExpression:l p("=") assignmentExpression:e
+    = typecastExpression:l p("<-") assignmentExpression:e
       ?(l.tag === "LookupPropertyExpression")
       !{ tag: "SetPropertyExpression", subject: l.subject, name: l.selector, argument: e }
-    | typecastExpression:l p("=") assignmentExpression:e
+    | typecastExpression:l p("<-") assignmentExpression:e
       ?(l.tag === "LookupExpression")
       !{ tag: "SetExpression", name: l.name, a: e }
     | typecastExpression
     ;
   
   typecastExpression
-    = conditionalExpression:a
-      ( id("as") conditionalExpression:t !{ tag: "TypecastExpression", type: t, argument: a }:a
+    = ternaryExpression:a
+      ( id("as") ternaryExpression:t !{ tag: "TypecastExpression", type: t, argument: a }:a
       )*
       !a
     ;
   
-  conditionalExpression
-    = comparisonExpression:c p("?") conditionalExpression:t p(":") conditionalExpression:f
-      !{ tag: "ConditionalExpression", condition: c, consiquent: t, alternative: f }
+  ternaryExpression
+    = comparisonExpression:c p("?") ternaryExpression:t p(":") ternaryExpression:f
+      !{ tag: "TernaryExpression", condition: c, consiquent: t, alternative: f }
     | comparisonExpression
     ;
     
@@ -300,9 +300,9 @@ grammar Parser {
   
   
   variable
-    = local:n p(":") type:t p("=") expression:e !{ tag: "VariableDeclaration", name: n, type: t,    value: e }
-    | local:n p(":") type:t                     !{ tag: "VariableDeclaration", name: n, type: t,    value: null }
-    | local:n               p("=") expression:e !{ tag: "VariableDeclaration", name: n, type: null, value: e }
+    = local:n p(":") type:t p("<-") expression:e !{ tag: "VariableDeclaration", name: n, type: t,    value: e }
+    | local:n p(":") type:t                      !{ tag: "VariableDeclaration", name: n, type: t,    value: null }
+    | local:n               p("<-") expression:e !{ tag: "VariableDeclaration", name: n, type: null, value: e }
       
     ;
     
@@ -365,7 +365,8 @@ grammar Parser {
         "return", 
         "goto",
         "and", "xor", "or", "not",
-        "quot", "rem"
+        "quot", "rem",
+        "true", "false", "null"
       ].excludes(n)
       !n
     ;
@@ -380,13 +381,13 @@ grammar Parser {
         
       | string(".") | string(":") | string("?") | string(",") | string(";")
       
+      | string("<-")
+      
       | string("==") | string("/=")
       | string(">=") | string("<=") | string("<") | string(">")
       
       | string("+") | string("-") | string("*") | string("/")
       | string("|") | string("^") | string("&") | string("~")
-      
-      | string("=")
       
       ):s
       ?(expected === s)

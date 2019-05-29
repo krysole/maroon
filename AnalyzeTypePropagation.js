@@ -95,34 +95,30 @@ function AnalyzeTypePropagation(ast) {
   }
   
   
-  else if (ast.tag === "LogicalOrExpression") {
-    ast.a.type = unify(ast.type, ast.a.type);
-    ast.b.type = unify(ast.type, ast.b.type);
-    
+  else if (ast.tag === "LogicalOrCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalXorExpression") {
-    ast.a.type = unify(ast.type, ast.a.type);
-    ast.b.type = unify(ast.type, ast.b.type);
-    
+  else if (ast.tag === "LogicalXorCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalAndExpression") {
-    ast.a.type = unify(ast.type, ast.a.type);
-    ast.b.type = unify(ast.type, ast.b.type);
-    
+  else if (ast.tag === "LogicalAndCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalNotExpression") {
-    ast.a.type = unify(ast.type, ast.a.type);
-    
+  else if (ast.tag === "LogicalNotCondition") {
     AnalyzeTypePropagation(ast.a);
   }
-  else if (ast.tag === "ConditionalExpression") {
-    ast.condition.type   = unify({ tag: "BooleanType" }, ast.condition.type);
+  else if (ast.tag === "ValueCondition") {
+    AnalyzeTypePropagation(ast.value);
+  }
+  
+  
+  else if (ast.tag === "ConditionExpression") {
+    AnalyzeTypePropagation(ast.condition);
+  }
+  else if (ast.tag === "TernaryExpression") {
     ast.consiquent.type  = unify(ast.type, ast.consiquent.type);
     ast.alternative.type = unify(ast.type, ast.alternative.type);
     
@@ -198,7 +194,7 @@ function AnalyzeTypePropagation(ast) {
     if (ast.type.width != null && ast.type.signed != null) {
     }
     else {
-      throw new Error();
+      throw new Error("Integer literal was not typed during type propagation.");
     }
   }
   else if (ast.tag === "StringLiteral") {
@@ -209,7 +205,7 @@ function AnalyzeTypePropagation(ast) {
     if (ast.type.target != null) {
     }
     else {
-      throw new Error();
+      throw new Error("Null literal was not typed during type propagation.");
     }
   }
   

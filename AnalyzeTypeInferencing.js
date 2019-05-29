@@ -95,30 +95,32 @@ function AnalyzeTypeInferencing(ast) {
   }
   
   
-  else if (ast.tag === "LogicalOrExpression") {
+  else if (ast.tag === "LogicalOrCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
-    
-    ast.type = { tag: "BooleanType" };
   }
-  else if (ast.tag === "LogicalXorExpression") {
+  else if (ast.tag === "LogicalXorCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
-    
-    ast.type = { tag: "BooleanType" };
   }
-  else if (ast.tag === "LogicalAndExpression") {
+  else if (ast.tag === "LogicalAndCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
-    
-    ast.type = { tag: "BooleanType" };
   }
-  else if (ast.tag === "LogicalNotExpression") {
+  else if (ast.tag === "LogicalNotCondition") {
     AnalyzeTypeInferencing(ast.a);
+  }
+  else if (ast.tag === "ValueCondition") {
+    AnalyzeTypeInferencing(ast.value);
+  }
+  
+  
+  else if (ast.tag === "ConditionExpression") {
+    AnalyzeTypeInferencing(ast.condition);
     
     ast.type = { tag: "BooleanType" };
   }
-  else if (ast.tag === "ConditionalExpression") {
+  else if (ast.tag === "TernaryExpression") {
     AnalyzeTypeInferencing(ast.condition);
     AnalyzeTypeInferencing(ast.consiquent);
     AnalyzeTypeInferencing(ast.alternative);
@@ -224,16 +226,24 @@ function AnalyzeTypeInferencing(ast) {
   
   
   else if (ast.tag === "IntegerLiteral") {
-    ast.type = { tag: "IntegerType", width: null, signed: null };
+    if (ast.type == null) {
+      ast.type = { tag: "IntegerType", width: null, signed: null };
+    }
   }
   else if (ast.tag === "StringLiteral") {
-    ast.type = { tag: "PointerType", target: { tag: "CharacterType" } };
+    if (ast.type == null) {
+      ast.type = { tag: "PointerType", target: { tag: "CharacterType" } };
+    }
   }
   else if (ast.tag === "BooleanLiteral") {
-    ast.type = { tag: "BooleanType" };
+    if (ast.type == null) {
+      ast.type = { tag: "BooleanType" };
+    }
   }
   else if (ast.tag === "NullLiteral") {
-    ast.type = { tag: "PointerType", target: null };
+    if (ast.type == null) {
+      ast.type = { tag: "PointerType", target: null };
+    }
   }
   
   

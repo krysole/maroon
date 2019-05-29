@@ -102,9 +102,11 @@ function Simplify(ast, context) {
     }
   }
   else if (ast.tag === "IfStatement") {
+    ast.condition = ConvertCondition(ast.condition);
+    
     Simplify(ast.condition, context);
     Simplify(ast.consiquent, context);
-    Simplify(ast.alternative, context);
+    if (ast.alternative != null) Simplify(ast.alternative, context);
   }
   else if (ast.tag === "OnceStatement") {
     Simplify(ast.body, context);
@@ -113,10 +115,14 @@ function Simplify(ast, context) {
     Simplify(ast.body, context);
   }
   else if (ast.tag === "WhileStatement") {
+    ast.condition = ConvertCondition(ast.condition);
+    
     Simplify(ast.condition, context);
     Simplify(ast.body, context);
   }
   else if (ast.tag === "DoWhileStatement") {
+    ast.condition = ConvertCondition(ast.condition);
+    
     Simplify(ast.body, context);
     Simplify(ast.condition, context);
   }
@@ -127,7 +133,7 @@ function Simplify(ast, context) {
   else if (ast.tag === "ReturnStatement") {
     ast.function = context.function;
     
-    Simplify(ast.a, context);
+    Simplify(ast.expression, context);
   }
   else if (ast.tag === "GotoStatement") {
   }
@@ -138,20 +144,73 @@ function Simplify(ast, context) {
   }
   
   
-  else if (ast.tag === "LogicalOrExpression") {
+  else if (ast.tag === "LogicalOrCondition") {
+    ast.a = ConvertCondition(ast.a);
+    ast.b = ConvertCondition(ast.b);
+    
     Simplify(ast.a, context);
     Simplify(ast.b, context);
+  }
+  else if (ast.tag === "LogicalXorCondition") {
+    ast.a = ConvertCondition(ast.a);
+    ast.b = ConvertCondition(ast.b);
+    
+    Simplify(ast.a, context);
+    Simplify(ast.b, context);
+  }
+  else if (ast.tag === "LogicalAndCondition") {
+    ast.a = ConvertCondition(ast.a);
+    ast.b = ConvertCondition(ast.b);
+    
+    Simplify(ast.a, context);
+    Simplify(ast.b, context);
+  }
+  else if (ast.tag === "LogicalNotCondition") {
+    ast.a = ConvertCondition(ast.a);
+    
+    Simplify(ast.a, context);
+  }
+  else if (ast.tag === "ValueCondition") {
+    Simplify(ast.value, context);
+  }
+  
+  
+  else if (ast.tag === "ConditionExpression") {
+    ast.condition = ConvertCondition(ast.condition);
+    
+    Simplify(ast.condition, context);
+  }
+  else if (ast.tag === "LogicalOrExpression") {
+    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    
+    Simplify(ast, context);
   }
   else if (ast.tag === "LogicalXorExpression") {
-    Simplify(ast.a, context);
-    Simplify(ast.b, context);
+    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    
+    Simplify(ast, context);
   }
   else if (ast.tag === "LogicalAndExpression") {
-    Simplify(ast.a, context);
-    Simplify(ast.b, context);
+    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    
+    Simplify(ast, context);
   }
   else if (ast.tag === "LogicalNotExpression") {
-    Simplify(ast.a, context);
+    if (ast.a.tag === "LogicalNotExpression") {
+      Object.transmute(ast, ast.a.a);
+      
+      Simplify(ast, context);
+    }
+    else if (ast.a.tag.match(/Logical/)) {
+      Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+      
+      Simplify(ast, context);
+    }
+    else {
+      Object.transmute(ast, { tag: "NotExpression", a: ast.a });
+      
+      Simplify(ast, context);
+    }
   }
   else if (ast.tag === "TypecastExpression") {
     Simplify(ast.argument, context);
@@ -161,14 +220,20 @@ function Simplify(ast, context) {
       Object.transmute(ast, { tag: "IntegerLiteral", value: ast.argument.value, type: ast.type });
       
       Simplify(ast, context);
+      
+      return;
     }
     if (ast.argument.tag === "NullLiteral" && ast.type.tag === "PointerType") {
       Object.transmute(ast, { tag: "NullLiteral", type: ast.type });
       
       Simplify(ast, context);
+      
+      return;
     }
   }
-  else if (ast.tag === "ConditionalExpression") {
+  else if (ast.tag === "TernaryExpression") {
+    ast.condition = ConvertCondition(ast.condition);
+    
     Simplify(ast.condition, context);
     Simplify(ast.consiquent, context);
     Simplify(ast.alternative, context);
@@ -230,6 +295,28 @@ function Simplify(ast, context) {
   
   else {
     throw new Error(`Unrecognized ast node tag ${ast.tag}.`);
+  }
+};
+
+
+function ConvertCondition(ast) {
+  if (ast.tag.match(/Condition$/)) {
+    return ast;
+  }
+  else if (ast.tag === "LogicalOrExpression") {
+    return { tag: "LogicalOrCondition", a: ast.a, b: ast.b };
+  }
+  else if (ast.tag === "LogicalXorExpression") {
+    return { tag: "LogicalXorCondition", a: ast.a, b: ast.b };
+  }
+  else if (ast.tag === "LogicalAndExpression") {
+    return { tag: "LogicalAndCondition", a: ast.a, b: ast.b };
+  }
+  else if (ast.tag === "LogicalNotExpression") {
+    return { tag: "LogicalNotCondition", a: ast.a };
+  }
+  else {
+    return { tag: "ValueCondition", value: ast };
   }
 };
 
