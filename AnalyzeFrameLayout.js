@@ -241,7 +241,7 @@ function AnalyzeFrameLayout(ast, context) {
     
     ast.loffset = ast.argument.loffset;
   }
-  else if (ast.tag === "IntegerCast") {
+  else if (ast.tag === "ExtendCast") {
     preservedloffset = context.loffset;
     {
       AnalyzeFrameLayout(ast.argument, context);

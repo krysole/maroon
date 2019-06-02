@@ -185,13 +185,19 @@ function AnalyzeTypeInferencing(ast) {
         // iXX => iYY
         // uXX => uYY
         
-        ast.tag = "IntegerCast";
+        if (ast.argument.type.width < ast.type.width) {
+          ast.tag = "ExtendCast";
+          ast.signed = ast.type.signed;
+        }
+        else {
+          ast.tag = "NullCast";
+        }
       }
       else if (ast.argument.type.tag === "IntegerType" && ast.argument.type.width === ast.type.width) {
         // iNN => uNN
         // uNN => iNN
         
-        ast.tag = "IntegerCast";
+        ast.tag = "NullCast";
       }
       else if (ast.type.width === 64 && ast.type.signed === false) {
         if (ast.argument.type.tag === "FunctionType") {
@@ -212,9 +218,13 @@ function AnalyzeTypeInferencing(ast) {
         // boolean => uNN
         // boolean => iNN
         
-        ast.tag                  = "IntegerCast";
-        ast.argument.type.width  = 8;
-        ast.argument.type.signed = ast.type.signed;
+        if (ast.type.width === 8) {
+          ast.tag = "NullCast";
+        }
+        else {
+          ast.tag = "ZeroExtendCast";
+          ast.argument.type.width = 8;
+        }
       }
       else {
         throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);

@@ -97,7 +97,10 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "IfStatement") {
     ast.condition = ConvertCondition(ast.condition);
-    ast.condition.negated = ast.negated;
+    
+    if (ast.negated) {
+      ast.condition = { tag: "NotCondition", a: ast.condition };
+    }
     
     Simplify(ast.condition, context);
     Simplify(ast.consiquent, context);
@@ -111,14 +114,20 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "WhileStatement") {
     ast.condition = ConvertCondition(ast.condition);
-    ast.condition.negated = ast.negated;
+    
+    if (ast.negated) {
+      ast.condition = { tag: "NotCondition", a: ast.condition };
+    }
     
     Simplify(ast.condition, context);
     Simplify(ast.body, context);
   }
   else if (ast.tag === "DoWhileStatement") {
     ast.condition = ConvertCondition(ast.condition);
-    ast.condition.negated = ast.negated;
+    
+    if (ast.negated) {
+      ast.condition = { tag: "NotCondition", a: ast.condition };
+    }
     
     Simplify(ast.body, context);
     Simplify(ast.condition, context);
@@ -145,27 +154,11 @@ function Simplify(ast, context) {
     ast.a = ConvertCondition(ast.a);
     ast.b = ConvertCondition(ast.b);
     
-    if (ast.negated) {
-      ast.a.negated = true;
-      ast.b.negated = true;
-
-      ast.tag = "AndCondition";
-
-      delete ast.negated;
-
-      Simplify(ast.a, context);
-      Simplify(ast.b, context);
-    }
-    else {
-      Simplify(ast.a, context);
-      Simplify(ast.b, context);
-    }
+    Simplify(ast.a, context);
+    Simplify(ast.b, context);
   }
   else if (ast.tag === "XorCondition") {
-    ast.a = ConvertCondition(ast.a);
-    ast.b = ConvertCondition(ast.b);
-
-    // Negated flag is allowed for xor, and simply generates the extra instruction.
+    // XOR does not convert arguments into conditions, they remain values.
     
     Simplify(ast.a, context);
     Simplify(ast.b, context);
@@ -174,55 +167,20 @@ function Simplify(ast, context) {
     ast.a = ConvertCondition(ast.a);
     ast.b = ConvertCondition(ast.b);
 
-    if (ast.negated) {
-      ast.a.negated = true;
-      ast.b.negated = true;
-
-      ast.tag = "OrCondition";
-
-      delete ast.negated;
-
-      Simplify(ast.a, context);
-      Simplify(ast.b, context);
-    }
-    else {
-      Simplify(ast.a, context);
-      Simplify(ast.b, context);
-    }
+    Simplify(ast.a, context);
+    Simplify(ast.b, context);
   }
   else if (ast.tag === "NotCondition") {
     ast.a = ConvertCondition(ast.a);
-    ast.a.negated = !ast.negated;
-
-    Object.transmute(ast, ast.a);
 
     Simplify(ast, context);
   }
   else if (ast.tag === "ComparisonCondition") {
-    if (ast.negated) {
-      if      (ast.o === "==") ast.o = "/=";
-      else if (ast.o === "/=") ast.o = "==";
-      else if (ast.o === "<")  ast.o = ">=";
-      else if (ast.o === "<=") ast.o = ">";
-      else if (ast.o === ">")  ast.o = "<=";
-      else if (ast.o === ">=") ast.o = "<";
-      else                     throw new Error();
-
-      delete ast.negated;
-    }
-
     Simplify(ast.a, context);
     Simplify(ast.b, context);
   }
   else if (ast.tag === "ValueCondition") {
-    if (ast.negated) {
-      Object.transmute(ast, { tag: "NotCondition", a: { tag: "ValueCondition", value: ast.value }});
-
-      Simplify(ast);
-    }
-    else {
-      Simplify(ast.value, context);
-    }
+    Simplify(ast.value, context);
   }
   
   
