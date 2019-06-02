@@ -170,15 +170,15 @@ grammar Parser {
   
   logicalInfixExpression
     = logicalNotExpression:a
-      ( id("or")  logicalNotExpression:b !{ tag: "LogicalOrExpression",  a: a, b: b }:a
-      | id("xor") logicalNotExpression:b !{ tag: "LogicalXorExpression", a: a, b: b }:a
-      | id("and") logicalNotExpression:b !{ tag: "LogicalAndExpression", a: a, b: b }:a
+      ( id("or")  logicalNotExpression:b !{ tag: "OrExpression",  a: a, b: b }:a
+      | id("xor") logicalNotExpression:b !{ tag: "XorExpression", a: a, b: b }:a
+      | id("and") logicalNotExpression:b !{ tag: "AndExpression", a: a, b: b }:a
       )*
       !a
     ;
   
   logicalNotExpression
-    = id("not") logicalNotExpression:a !{ tag: "LogicalNotExpression", a: a }
+    = id("not") logicalNotExpression:a !{ tag: "NotExpression", a: a }
     | assignmentExpression
     ;
   

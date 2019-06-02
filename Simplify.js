@@ -97,6 +97,7 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "IfStatement") {
     ast.condition = ConvertCondition(ast.condition);
+    ast.condition.negated = ast.negated;
     
     Simplify(ast.condition, context);
     Simplify(ast.consiquent, context);
@@ -110,12 +111,14 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "WhileStatement") {
     ast.condition = ConvertCondition(ast.condition);
+    ast.condition.negated = ast.negated;
     
     Simplify(ast.condition, context);
     Simplify(ast.body, context);
   }
   else if (ast.tag === "DoWhileStatement") {
     ast.condition = ConvertCondition(ast.condition);
+    ast.condition.negated = ast.negated;
     
     Simplify(ast.body, context);
     Simplify(ast.condition, context);
@@ -138,34 +141,88 @@ function Simplify(ast, context) {
   }
   
   
-  else if (ast.tag === "LogicalOrCondition") {
+  else if (ast.tag === "OrCondition") {
     ast.a = ConvertCondition(ast.a);
     ast.b = ConvertCondition(ast.b);
+    
+    if (ast.negated) {
+      ast.a.negated = true;
+      ast.b.negated = true;
+
+      ast.tag = "AndCondition";
+
+      delete ast.negated;
+
+      Simplify(ast.a, context);
+      Simplify(ast.b, context);
+    }
+    else {
+      Simplify(ast.a, context);
+      Simplify(ast.b, context);
+    }
+  }
+  else if (ast.tag === "XorCondition") {
+    ast.a = ConvertCondition(ast.a);
+    ast.b = ConvertCondition(ast.b);
+
+    // Negated flag is allowed for xor, and simply generates the extra instruction.
     
     Simplify(ast.a, context);
     Simplify(ast.b, context);
   }
-  else if (ast.tag === "LogicalXorCondition") {
+  else if (ast.tag === "AndCondition") {
     ast.a = ConvertCondition(ast.a);
     ast.b = ConvertCondition(ast.b);
-    
+
+    if (ast.negated) {
+      ast.a.negated = true;
+      ast.b.negated = true;
+
+      ast.tag = "OrCondition";
+
+      delete ast.negated;
+
+      Simplify(ast.a, context);
+      Simplify(ast.b, context);
+    }
+    else {
+      Simplify(ast.a, context);
+      Simplify(ast.b, context);
+    }
+  }
+  else if (ast.tag === "NotCondition") {
+    ast.a = ConvertCondition(ast.a);
+    ast.a.negated = !ast.negated;
+
+    Object.transmute(ast, ast.a);
+
+    Simplify(ast, context);
+  }
+  else if (ast.tag === "ComparisonCondition") {
+    if (ast.negated) {
+      if      (ast.o === "==") ast.o = "/=";
+      else if (ast.o === "/=") ast.o = "==";
+      else if (ast.o === "<")  ast.o = ">=";
+      else if (ast.o === "<=") ast.o = ">";
+      else if (ast.o === ">")  ast.o = "<=";
+      else if (ast.o === ">=") ast.o = "<";
+      else                     throw new Error();
+
+      delete ast.negated;
+    }
+
     Simplify(ast.a, context);
     Simplify(ast.b, context);
-  }
-  else if (ast.tag === "LogicalAndCondition") {
-    ast.a = ConvertCondition(ast.a);
-    ast.b = ConvertCondition(ast.b);
-    
-    Simplify(ast.a, context);
-    Simplify(ast.b, context);
-  }
-  else if (ast.tag === "LogicalNotCondition") {
-    ast.a = ConvertCondition(ast.a);
-    
-    Simplify(ast.a, context);
   }
   else if (ast.tag === "ValueCondition") {
-    Simplify(ast.value, context);
+    if (ast.negated) {
+      Object.transmute(ast, { tag: "NotCondition", a: { tag: "ValueCondition", value: ast.value }});
+
+      Simplify(ast);
+    }
+    else {
+      Simplify(ast.value, context);
+    }
   }
   
   
@@ -174,37 +231,25 @@ function Simplify(ast, context) {
     
     Simplify(ast.condition, context);
   }
-  else if (ast.tag === "LogicalOrExpression") {
+  else if (ast.tag === "OrExpression") {
     Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
-  else if (ast.tag === "LogicalXorExpression") {
+  else if (ast.tag === "XorExpression") {
     Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
-  else if (ast.tag === "LogicalAndExpression") {
+  else if (ast.tag === "AndExpression") {
     Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
-  else if (ast.tag === "LogicalNotExpression") {
-    if (ast.a.tag === "LogicalNotExpression") {
-      Object.transmute(ast, ast.a.a);
-      
-      Simplify(ast, context);
-    }
-    else if (ast.a.tag.match(/Logical/)) {
-      Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
-      
-      Simplify(ast, context);
-    }
-    else {
-      Object.transmute(ast, { tag: "NotExpression", a: ast.a });
-      
-      Simplify(ast, context);
-    }
+  else if (ast.tag === "NotExpression") {
+    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    
+    Simplify(ast, context);
   }
   else if (ast.tag === "TypecastExpression") {
     Simplify(ast.argument, context);
@@ -297,17 +342,17 @@ function ConvertCondition(ast) {
   if (ast.tag.match(/Condition$/)) {
     return ast;
   }
-  else if (ast.tag === "LogicalOrExpression") {
-    return { tag: "LogicalOrCondition", a: ast.a, b: ast.b };
+  else if (ast.tag === "OrExpression") {
+    return { tag: "OrCondition", a: ast.a, b: ast.b };
   }
-  else if (ast.tag === "LogicalXorExpression") {
-    return { tag: "LogicalXorCondition", a: ast.a, b: ast.b };
+  else if (ast.tag === "XorExpression") {
+    return { tag: "XorCondition", a: ast.a, b: ast.b };
   }
-  else if (ast.tag === "LogicalAndExpression") {
-    return { tag: "LogicalAndCondition", a: ast.a, b: ast.b };
+  else if (ast.tag === "AndExpression") {
+    return { tag: "AndCondition", a: ast.a, b: ast.b };
   }
-  else if (ast.tag === "LogicalNotExpression") {
-    return { tag: "LogicalNotCondition", a: ast.a };
+  else if (ast.tag === "NotExpression") {
+    return { tag: "NotCondition", a: ast.a };
   }
   else if (ast.tag === "ComparisonExpression") {
     return { tag: "ComparisonCondition", o: ast.o, a: ast.a, b: ast.b };

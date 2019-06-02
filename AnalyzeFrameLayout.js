@@ -192,25 +192,25 @@ function AnalyzeFrameLayout(ast, context) {
   }
   
   
-  else if (ast.tag === "LogicalOrCondition") {
+  else if (ast.tag === "OrCondition") {
     AnalyzeFrameLayout(ast.a, context);
     AnalyzeFrameLayout(ast.b, context);
     
     // No result, CPU flag used.
   }
-  else if (ast.tag === "LogicalXorCondition") {
+  else if (ast.tag === "XorCondition") {
     AnalyzeFrameLayout(ast.a, context);
     AnalyzeFrameLayout(ast.b, context);
     
     // No result, CPU flag used.
   }
-  else if (ast.tag === "LogicalAndCondition") {
+  else if (ast.tag === "AndCondition") {
     AnalyzeFrameLayout(ast.a, context);
     AnalyzeFrameLayout(ast.b, context);
     
     // No result, CPU flag used.
   }
-  else if (ast.tag === "LogicalNotCondition") {
+  else if (ast.tag === "NotCondition") {
     AnalyzeFrameLayout(ast.a, context);
     
     // No result, CPU flag used.

@@ -95,19 +95,19 @@ function AnalyzeTypeInferencing(ast) {
   }
   
   
-  else if (ast.tag === "LogicalOrCondition") {
+  else if (ast.tag === "OrCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
   }
-  else if (ast.tag === "LogicalXorCondition") {
+  else if (ast.tag === "XorCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
   }
-  else if (ast.tag === "LogicalAndCondition") {
+  else if (ast.tag === "AndCondition") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
   }
-  else if (ast.tag === "LogicalNotCondition") {
+  else if (ast.tag === "NotCondition") {
     AnalyzeTypeInferencing(ast.a);
   }
   else if (ast.tag === "ComparisonCondition") {

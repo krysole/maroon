@@ -95,19 +95,19 @@ function AnalyzeTypePropagation(ast) {
   }
   
   
-  else if (ast.tag === "LogicalOrCondition") {
+  else if (ast.tag === "OrCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalXorCondition") {
+  else if (ast.tag === "XorCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalAndCondition") {
+  else if (ast.tag === "AndCondition") {
     AnalyzeTypePropagation(ast.a);
     AnalyzeTypePropagation(ast.b);
   }
-  else if (ast.tag === "LogicalNotCondition") {
+  else if (ast.tag === "NotCondition") {
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "ComparisonCondition") {
