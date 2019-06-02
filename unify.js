@@ -55,9 +55,6 @@ function unify(a, b) {
     
     return result;
   }
-  else if (a.tag === "CharacterType" && b.tag === "CharacterType") {
-    return a;
-  }
   else if (a.tag === "BooleanType" && b.tag === "BooleanType") {
     return a;
   }

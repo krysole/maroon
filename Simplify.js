@@ -69,10 +69,6 @@ function Simplify(ast, context) {
   }
   
   
-  else if (ast.tag === "ArrayType") {
-    Simplify(ast.type, context);
-    Simplify(ast.count, context);
-  }
   else if (ast.tag === "FunctionType") {
     for (let parameter of ast.parameters) {
       Simplify(ast.parameter, context);
@@ -83,8 +79,6 @@ function Simplify(ast, context) {
     Simplify(ast.target, context);
   }
   else if (ast.tag === "IntegerType") {
-  }
-  else if (ast.tag === "CharacterType") {
   }
   else if (ast.tag === "BooleanType") {
   }
@@ -249,10 +243,10 @@ function Simplify(ast, context) {
   else if (ast.tag === "PrefixExpression") {
     Simplify(ast.a, context);
   }
-  else if (ast.tag === "DereferenceExpression") {
+  else if (ast.tag === "DerefExpression") {
     Simplify(ast.a, context);
   }
-  else if (ast.tag === "ReferenceExpression") {
+  else if (ast.tag === "AddrExpression") {
     Simplify(ast.a, context);
   }
   else if (ast.tag === "LookupExpression") {
@@ -314,6 +308,9 @@ function ConvertCondition(ast) {
   }
   else if (ast.tag === "LogicalNotExpression") {
     return { tag: "LogicalNotCondition", a: ast.a };
+  }
+  else if (ast.tag === "ComparisonExpression") {
+    return { tag: "ComparisonCondition", o: ast.o, a: ast.a, b: ast.b };
   }
   else {
     return { tag: "ValueCondition", value: ast };

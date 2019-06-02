@@ -110,6 +110,14 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "LogicalNotCondition") {
     AnalyzeTypeInferencing(ast.a);
   }
+  else if (ast.tag === "ComparisonCondition") {
+    AnalyzeTypeInferencing(ast.a);
+    AnalyzeTypeInferencing(ast.b);
+    
+    unify(ast.a.type, ast.b.type);
+    
+    ast.type = { tag: "BooleanType" };
+  }
   else if (ast.tag === "ValueCondition") {
     AnalyzeTypeInferencing(ast.value);
   }
@@ -119,6 +127,113 @@ function AnalyzeTypeInferencing(ast) {
     AnalyzeTypeInferencing(ast.condition);
     
     ast.type = { tag: "BooleanType" };
+  }
+  else if (ast.tag === "TypecastExpression") {
+    AnalyzeTypeInferencing(ast.argument);
+    
+    if (ast.argument.type.tag === ast.type.tag &&
+        ast.argument.type.width === ast.type.width && // if present
+        ast.argument.type.signed === ast.type.signed) { // if present
+      // t => t
+      
+      ast.tag = "NullCast";
+    }
+    if (ast.type.tag === "FunctionType") {
+      if (ast.argument.type.tag === "PointerType") {
+        // [t] => fn [...] r;
+        
+        ast.tag = "NullCast";
+      }
+      else if (ast.argument.type.tag === "IntegerType" &&
+               ast.argument.type.width === 64 &&
+               ast.argument.type.signed === false) {
+        // u64 => fn [...] r
+        
+        ast.tag = "NullCast";
+      }
+      else {
+        throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);
+      }
+    }
+    else if (ast.type.tag === "PointerType") {
+      if (ast.argument.type.tag === "FunctionType") {
+        // fn [...] r => [t]
+        
+        ast.tag = "NullCast";
+      }
+      else if (ast.argument.type.tag === "PointerType") {
+        // [a] => [b]
+        
+        // For now who cares what the types are, assume the programmer knows
+        // what they are doing.
+        
+        ast.tag = "NullCast";
+      }
+      else if (ast.argument.type.tag === "IntegerType" &&
+               ast.argument.type.width === 64 &&
+               ast.argument.type.signed === false) {
+        // u64 => [t]
+        
+        ast.tag = "NullCast";
+      }
+      else {
+        throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);
+      }
+    }
+    else if (ast.type.tag === "IntegerType") {
+      if (ast.argument.type.tag === "IntegerType" && ast.argument.type.signed === ast.type.signed) {
+        // iXX => iYY
+        // uXX => uYY
+        
+        ast.tag = "IntegerCast";
+      }
+      else if (ast.argument.type.tag === "IntegerType" && ast.argument.type.width === ast.type.width) {
+        // iNN => uNN
+        // uNN => iNN
+        
+        ast.tag = "IntegerCast";
+      }
+      else if (ast.type.width === 64 && ast.type.signed === false) {
+        if (ast.argument.type.tag === "FunctionType") {
+          // fn [...] r => u64
+          
+          ast.tag = "NullCast";
+        }
+        else if (ast.argument.type.tag === "PointerType") {
+          // [t] => u64
+          
+          ast.tag = "NullCast";
+        }
+        else {
+          throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);
+        }
+      }
+      else if (ast.argument.type.tag === "BooleanType") {
+        // boolean => uNN
+        // boolean => iNN
+        
+        ast.tag                  = "IntegerCast";
+        ast.argument.type.width  = 8;
+        ast.argument.type.signed = ast.type.signed;
+      }
+      else {
+        throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);
+      }
+    }
+    else if (ast.type.tag === "BooleanType") {
+      if (ast.argument.type.tag === "IntegerType") {
+        // iNN => boolean
+        // uNN => boolean
+        
+        ast.tag = "BooleanCast";
+      }
+      else {
+        throw new Error(`Cannot cast from ${ast.argument.type.tag} to ${ast.type.tag}.`);
+      }
+    }
+    else {
+      throw new Error(`Cannot typecast to ${ast.type.tag}.`);
+    }
   }
   else if (ast.tag === "TernaryExpression") {
     AnalyzeTypeInferencing(ast.condition);
@@ -130,6 +245,8 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "ComparisonExpression") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
+    
+    unify(ast.a.type, ast.b.type);
     
     ast.type = { tag: "BooleanType" };
   }
@@ -144,7 +261,7 @@ function AnalyzeTypeInferencing(ast) {
     
     ast.type = ast.a.type;
   }
-  else if (ast.tag === "DereferenceExpression") {
+  else if (ast.tag === "DerefExpression") {
     AnalyzeTypeInferencing(ast.a);
     
     if (ast.a.type.tag === "PointerType") {
@@ -154,7 +271,7 @@ function AnalyzeTypeInferencing(ast) {
       throw new Error();
     }
   }
-  else if (ast.tag === "ReferenceExpression") {
+  else if (ast.tag === "AddrExpression") {
     AnalyzeTypeInferencing(ast.a);
     
     ast.type = { tag: "PointerType", target: ast.a.type };
@@ -232,7 +349,7 @@ function AnalyzeTypeInferencing(ast) {
   }
   else if (ast.tag === "StringLiteral") {
     if (ast.type == null) {
-      ast.type = { tag: "PointerType", target: { tag: "CharacterType" } };
+      ast.type = { tag: "PointerType", target: { tag: "IntegerType", width: 8, signed: true } };
     }
   }
   else if (ast.tag === "BooleanLiteral") {

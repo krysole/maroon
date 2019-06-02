@@ -35,6 +35,8 @@ let AnalyzeFunctionTypes    = require("./AnalyzeFunctionTypes.js");
 let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
 let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
 
+let AnalyzeFrameLayout      = require("./AnalyzeFrameLayout.js");
+
 
 Object.defineProperty(Array.prototype, "excludes", {
   value: function (object) { return !this.includes(object); },
@@ -86,6 +88,12 @@ function main(argv) {
   AnalyzeFunctionTypes(unit);
   AnalyzeTypeInferencing(unit);
   AnalyzeTypePropagation(unit);
+  
+  
+  // output(null, inspect(unit, { depth: null }) + "\n");
+
+
+  AnalyzeFrameLayout(unit);
   
   
   output(null, inspect(unit, { depth: null }) + "\n");

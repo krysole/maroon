@@ -2,10 +2,10 @@
 -- Test program.
 --
 
-fn puts[[char] string] i32;
+fn puts[[i8] string] i32;
 fn exit[i32 exit_code] halts;
 
-fn main[i32 argc, [char][] argv] halts {
+fn main[] halts {
   -- if not true and false {
   --   puts["Hello world.\n"];
   -- }

@@ -267,7 +267,7 @@ grammar Parser {
   
   primaryExpression
     = p("(") expression:a p(")") !a
-    | p("[") expression:a p("]") !{ tag: "DereferenceExpression", a: a }
+    | p("[") expression:a p("]") !{ tag: "DerefExpression", a: a }
     
     | local:n !{ tag: "LookupExpression", name: n }
     
@@ -300,10 +300,7 @@ grammar Parser {
   
   
   variable
-    = local:n p(":") type:t p("<-") expression:e !{ tag: "VariableDeclaration", name: n, type: t,    value: e }
-    | local:n p(":") type:t                      !{ tag: "VariableDeclaration", name: n, type: t,    value: null }
-    | local:n               p("<-") expression:e !{ tag: "VariableDeclaration", name: n, type: null, value: e }
-      
+    = local:n p("<-") expression:e !{ tag: "VariableDeclaration", name: n, value: e }
     ;
     
     

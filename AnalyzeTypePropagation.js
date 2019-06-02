@@ -110,8 +110,23 @@ function AnalyzeTypePropagation(ast) {
   else if (ast.tag === "LogicalNotCondition") {
     AnalyzeTypePropagation(ast.a);
   }
+  else if (ast.tag === "ComparisonCondition") {
+    AnalyzeTypePropagation(ast.a);
+    AnalyzeTypePropagation(ast.b);
+  }
   else if (ast.tag === "ValueCondition") {
     AnalyzeTypePropagation(ast.value);
+  }
+  
+  
+  else if (ast.tag === "NullCast") {
+    AnalyzeTypePropagation(ast.argument);
+  }
+  else if (ast.tag === "IntegerCast") {
+    AnalyzeTypePropagation(ast.argument);
+  }
+  else if (ast.tag === "BooleanCast") {
+    AnalyzeTypePropagation(ast.argument);
   }
   
   
@@ -144,10 +159,10 @@ function AnalyzeTypePropagation(ast) {
     
     AnalyzeTypePropagation(ast.a);
   }
-  else if (ast.tag === "DereferenceExpression") {
+  else if (ast.tag === "DerefExpression") {
     AnalyzeTypePropagation(ast.a);
   }
-  else if (ast.tag === "ReferenceExpression") {
+  else if (ast.tag === "AddrExpression") {
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "LookupExpression") {
