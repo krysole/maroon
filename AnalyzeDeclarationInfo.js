@@ -58,7 +58,7 @@ function AnalyzeDeclarationInfo(ast) {
         AnalyzeDeclarationInfo(variable.value);
       }
       
-      ast.kind = "LocalVariable";
+      variable.kind = "LocalVariable";
     }
   }
   else if (ast.tag === "IfStatement") {

@@ -322,7 +322,7 @@ grammar Parser {
     ;
   decintLiteral
     = ws* dec:d ( dec | char("_") )*:ds
-      !(new BigNumber((d + ds.join("")).replace(/_/g, ""), 8)):v
+      !(new BigNumber(d + ds.join("").replace(/_/g, ""), 10)):v
       !{ tag: "IntegerLiteral", value: v }
     ;
   hexintLiteral

@@ -31,11 +31,14 @@ let InstallSourceUnit       = require("./InstallSourceUnit.js");
 
 let Simplify                = require("./Simplify.js");
 
+let AnalyzeDeclarationInfo  = require("./AnalyzeDeclarationInfo.js");
 let AnalyzeFunctionTypes    = require("./AnalyzeFunctionTypes.js");
 let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
 let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
 
 let AnalyzeFrameLayout      = require("./AnalyzeFrameLayout.js");
+
+let GenerateAsm             = require("./GenerateAsm.js");
 
 
 Object.defineProperty(Array.prototype, "excludes", {
@@ -85,6 +88,7 @@ function main(argv) {
   // output(null, inspect(unit, { depth: null }) + "\n");
   
   
+  AnalyzeDeclarationInfo(unit);
   AnalyzeFunctionTypes(unit);
   AnalyzeTypeInferencing(unit);
   AnalyzeTypePropagation(unit);
@@ -96,7 +100,7 @@ function main(argv) {
   AnalyzeFrameLayout(unit);
   
   
-  output(null, inspect(unit, { depth: null }) + "\n");
+  // output(null, inspect(unit, { depth: null }) + "\n");
   
   
   GenerateAsm(unit);

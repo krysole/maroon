@@ -10,7 +10,7 @@ fn main[] halts {
   --   puts["Hello world.\n"];
   -- }
   
-  let a <- 1 as i32;
+  let a <- 42 as i32;
   
-  exit[0];
+  exit[a];
 }

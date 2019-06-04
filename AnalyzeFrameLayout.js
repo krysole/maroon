@@ -30,8 +30,8 @@ function align(type) {
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
-  else if (type.tag === "HaltType")     throw new Error("HaltType does not have alignment.");
-  else if (type.tag === "VoidType")     throw new Error("VoidType does not have alignment.");
+  else if (type.tag === "HaltType")     throw new Error("HaltType does not have data alignment.");
+  else if (type.tag === "VoidType")     throw new Error("VoidType does not have data alignment.");
   else                                  throw new Error("Invalid type.");
 }
 
@@ -40,8 +40,8 @@ function sizeof(type) {
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
-  else if (type.tag === "HaltType")     throw new Error("HaltType does not have alignment.");
-  else if (type.tag === "VoidType")     throw new Error("VoidType does not have alignment.");
+  else if (type.tag === "HaltType")     throw new Error("HaltType does not have data size.");
+  else if (type.tag === "VoidType")     throw new Error("VoidType does not have data size.");
   else                                  throw new Error("Invalid type.");
 }
 
