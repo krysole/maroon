@@ -26,11 +26,21 @@ function GenerateAsm(ast, context) {
   
   
   else if (ast.tag === "Unit") {
-    let context = { asm: "" };
+    let context = { asm: "", strings: [] };
     
     Symtab.each(ast, false, decl => {
       GenerateAsm(decl, context);
     });
+    
+    if (context.strings.length > 0) {
+      context.asm += `\n`;
+      context.asm += `\n`;
+      context.asm += `  .section __TEXT,__string,cstring_literals`;
+      for (let i = 0, c = context.strings.length; i < c; i++) {
+        context.asm += `L_string_${i}:\n`;
+        context.asm += `  .asciz   ${JSON.stringify(s)}\n`;
+      }
+    }
     
     ast.asm = context.asm;
   }
@@ -40,6 +50,8 @@ function GenerateAsm(ast, context) {
     context.fn    = ast;
     context.label = 0;
 
+    context.asm += `\n`;
+    context.asm += `\n`;
     context.asm += `  .section __TEXT,__text,regular,pure_instructions\n`;
     context.asm += `  .globl _${ast.name}\n`;
     context.asm += `  .p2align 4, 0x90\n`;
@@ -331,15 +343,15 @@ function GenerateAsm(ast, context) {
     else if (width === 32) context.asm += `movl  $-${ast.a.loffset}(%rbp), %eax\n`;
     else if (width === 64) context.asm += `movq  $-${ast.a.loffset}(%rbp), %rax\n`;
     
-    if      (width ===  8) context.asm += `movb  $-${ast.b.loffset}(%rbp), %dl\n`;
-    else if (width === 16) context.asm += `movw  $-${ast.b.loffset}(%rbp), %dx\n`;
-    else if (width === 32) context.asm += `movl  $-${ast.b.loffset}(%rbp), %edx\n`;
-    else if (width === 64) context.asm += `movq  $-${ast.b.loffset}(%rbp), %rdx\n`;
+    if      (width ===  8) context.asm += `movb  $-${ast.b.loffset}(%rbp), %bl\n`;
+    else if (width === 16) context.asm += `movw  $-${ast.b.loffset}(%rbp), %bx\n`;
+    else if (width === 32) context.asm += `movl  $-${ast.b.loffset}(%rbp), %ebx\n`;
+    else if (width === 64) context.asm += `movq  $-${ast.b.loffset}(%rbp), %rbx\n`;
     
-    if      (width ===  8) context.asm += `cmpb  %dl, %al\n`;
-    else if (width === 16) context.asm += `cmpw  %dx, %ax\n`;
-    else if (width === 32) context.asm += `cmpl  %edx, %eax\n`;
-    else if (width === 64) context.asm += `cmpq  %rdx, %rax\n`;
+    if      (width ===  8) context.asm += `cmpb  %bl, %al\n`;
+    else if (width === 16) context.asm += `cmpw  %bx, %ax\n`;
+    else if (width === 32) context.asm += `cmpl  %ebx, %eax\n`;
+    else if (width === 64) context.asm += `cmpq  %rbx, %rax\n`;
     
     if      (ast.o === "==") context.asm += `je    LABEL__${context.fn.name}__${ast.thenLabel}\n`;
     else if (ast.o === "/=") context.asm += `jne   LABEL__${context.fn.name}__${ast.thenLabel}\n`;
@@ -408,9 +420,348 @@ function GenerateAsm(ast, context) {
       context.asm += `setnz %al\n`;
     }
   }
-
-
-  // Todo
+  
+  
+  else if (ast.tag === "ConditionExpression") {
+    let thenLabel = context.label++;
+    let elseLabel = context.label++;
+    let nextLabel = context.label++;
+    
+    GenerateAsm(ast.condition, context);
+    context.asm += `LABEL__${context.fn.name}__${thenLabel}:\n`;
+    context.asm += `movb  $1, %al\n`;
+    context.asm += `jmp   LABEL__${context.fn.name}__${nextLabel}\n`;
+    context.asm += `LABEL__${context.fn.name}__${elseLabel}:\n`;
+    context.asm += `movb  $0, %al\n`;
+    context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
+    context.asm += `movb  %al, $-${ast.loffset}(%rbp)\n`;
+  }
+  else if (ast.tag === "TernaryExpression") {
+    let thenLabel = context.label++;
+    let elseLabel = context.label++;
+    let nextLabel = context.label++;
+    
+    GenerateAsm(ast.condition, context);
+    context.asm += `LABEL__${context.fn.name}__${thenLabel}:\n`;
+    GenerateAsm(ast.consiquent, context);
+    context.asm += `jmp   LABEL__${context.fn.name}__${nextLabel}\n`;
+    context.asm += `LABEL__${context.fn.name}__${elseLabel}:\n`;
+    GenerateAsm(ast.alternative, context);
+    context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
+  }
+  else if (ast.tag === "InfixExpression") {
+    if (ast.type.tag === "IntegerType") {
+      let w = widthOf(ast.type);
+      let x, a, b, r, i = (ast.signed ? "i" : "");
+      
+      if      (w ===  8) x += "b";
+      else if (w === 16) x += "w";
+      else if (w === 32) x += "l";
+      else if (w === 64) x += "q";
+      
+      if      (w ===  8) a = "%al";
+      else if (w === 16) a = "%ax";
+      else if (w === 32) a = "%eax";
+      else if (w === 64) a = "%rax";
+      
+      if      (w ===  8) b = "%bl";
+      else if (w === 16) b = "%bx";
+      else if (w === 32) b = "%ebx";
+      else if (w === 64) b = "%rbx";
+      
+      if      (w ===  8) r = "%ah";
+      else if (w === 16) r = "%dx";
+      else if (w === 32) r = "%edx";
+      else if (w === 64) r = "%rdx";
+      
+      GenerateAsm(ast.a, context);
+      GenerateAsm(ast.b, context);
+      if (ast.o === "quot") context.asm += `xor${x}  ${r}, ${r}\n`;
+      if (ast.o === "rem")  context.asm += `xor${x}  ${r}, ${r}\n`;
+      context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+      context.asm += `mov${x}  $-${ast.b.loffset}(%rbp), ${b}\n`;
+      if      (ast.o === "|")    context.asm += `or${x}   ${b}, ${a}\n`;
+      else if (ast.o === "^")    context.asm += `xor${x}  ${b}, ${a}\n`;
+      else if (ast.o === "&")    context.asm += `and${x}  ${b}, ${a}\n`;
+      else if (ast.o === "+")    context.asm += `add${x}  ${b}, ${a}\n`;
+      else if (ast.o === "-")    context.asm += `sub${x}  ${b}, ${a}\n`;
+      else if (ast.o === "*")    context.asm += `${i}mul${x}  ${b}, ${a}\n`;
+      else if (ast.o === "/")    throw new Error("Cannot divide integers, quot or rem intended?");
+      else if (ast.o === "quot") context.asm += `${i}div${x}  ${b}\n`;
+      else if (ast.o === "rem")  context.asm += `${i}div${x}  ${b}\n` + `mov${x}  ${r}, ${a}\n`;
+      else if (ast.o === "exp")  throw new Error("exp currently unsupported");
+      else                       throw new Error(`Unrecognized operator ${ast.o}.`);
+      context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+    }
+    else {
+      throw new Error(`Cannot generate infix operator for type ${ast.type.tag}.`);
+    }
+  }
+  else if (ast.tag === "PrefixExpression") {
+    if (ast.type.tag === "IntegerType") {
+      let w = widthOf(ast.type);
+      let x, a;
+      
+      if      (w ===  8) x += "b";
+      else if (w === 16) x += "w";
+      else if (w === 32) x += "l";
+      else if (w === 64) x += "q";
+      
+      if      (w ===  8) a = "%al";
+      else if (w === 16) a = "%ax";
+      else if (w === 32) a = "%eax";
+      else if (w === 64) a = "%rax";
+      
+      if (ast.o === "+") {
+        // Leave result where it is.
+      }
+      else if (ast.o === "-") {
+        GenerateAsm(ast.a, context);
+        context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `neg${x}  ${a}\n`;
+        context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "~") {
+        GenerateAsm(ast.a, context);
+        context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `not${x}  ${a}\n`;
+        context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;  
+      }
+      else {
+        throw new Error(`Unrecognized operator ${ast.o}.`);
+      }
+    }
+    else {
+      throw new Error(`Cannot generate prefix operator for type ${ast.type.tag}.`);
+    }
+  }
+  else if (ast.tag === "DerefExpression") {
+    // We can assume that we're only dealing with word types (register types).
+    
+    GenerateAst(asm.a, context);
+    context.asm += `movq  $-${ast.a.loffset}(%rbp), %rax\n`;
+    context.asm += `movq  (%rax), %rax\n`;
+    context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+  }
+  else if (ast.tag === "AddrExpression") {
+    if (ast.declaration.kind === "ExternalFunction") {
+      throw new Error("Cannot load address of external function.");
+      
+      // context.asm += `leaq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+      // context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "GlobalFunction") {
+      throw new Error("Cannot load address of global function.");
+      
+      // context.asm += `leaq  _${ast.name}(%rip), %rax\n`;
+      // context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "ExternalVariable") {
+      context.asm += `movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+      context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "GlobalVariable") {
+      context.asm += `leaq  _${ast.name}(%rip), %rax\n`;
+      context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "LocalVariable") {
+      context.asm += `leaq  $-${ast.declaration.loffset}(%rbp), %rax\n`;
+      context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else {
+      throw new Error();
+    }
+  }
+  else if (ast.tag === "LookupExpression") {
+    // Todo: Perhaps the location can be moved into a seperate *Location node
+    //       which generates the pointer to the data in question in a register
+    //       using 'leaq' as required. LookupExpression could then be replaced
+    //       by a LoadExpression, and SetExpression with StoreExpression, which
+    //       could be used to load and store word types, and word like types
+    //       as required. There would only really be assignment of arrays and
+    //       structs to deal with otherwise, which can't be handled as loads
+    //       and stores anyway, and must be converted to copy operations at
+    //       some point, specifically, after type analysis.
+    
+    
+    let w = widthOf(ast.type);
+    let x, a;
+    
+    if      (w ===  8) x += "b";
+    else if (w === 16) x += "w";
+    else if (w === 32) x += "l";
+    else if (w === 64) x += "q";
+    
+    if      (w ===  8) a = "%al";
+    else if (w === 16) a = "%ax";
+    else if (w === 32) a = "%eax";
+    else if (w === 64) a = "%rax";
+    
+    if (ast.declaration.kind === "ExternalFunction") {
+      context.asm += `movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+      context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "GlobalFunction") {
+      context.asm += `leaq  _${ast.name}(%rip), %rax\n`;
+      context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "ExternalVariable") {
+      context.asm += `movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+      context.asm += `mov${x}  (%rax), ${a}\n`;
+      context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "GlobalVariable") {
+      context.asm += `mov${x}  _${ast.name}(%rip), ${a}\n`;
+      context.asm += `mov${a}  ${a}, $-${ast.loffset}(%rbp)\n`;
+    }
+    else if (ast.declaration.kind === "LocalVariable") {
+      context.asm += `mov${x}  $-${ast.declaration.loffset}(%rbp), ${a}\n`;
+      context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+    }
+    else {
+      throw new Error();
+    }
+  }
+  else if (ast.tag === "SetExpression") {
+    let w = widthOf(ast.type);
+    let x, a;
+    
+    if      (w ===  8) x += "b";
+    else if (w === 16) x += "w";
+    else if (w === 32) x += "l";
+    else if (w === 64) x += "q";
+    
+    if      (w ===  8) a = "%al";
+    else if (w === 16) a = "%ax";
+    else if (w === 32) a = "%eax";
+    else if (w === 64) a = "%rax";
+    
+    if (ast.declaration.kind === "ExternalFunction") {
+      throw new Error("Cannot store into external function.");
+    }
+    else if (ast.declaration.kind === "GlobalFunction") {
+      throw new Error("Cannot store into global function.");
+    }
+    else if (ast.declaration.kind === "ExternalVariable") {
+      GenerateAsm(ast.a, context);
+      context.asm += `movq  _${ast.name}@GOTPCREL(%rip), %rbx\n`;
+      context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+      context.asm += `mov${x}  ${a}, (%rbx)\n`;
+      // argument left at -ast.loffset since -ast.loffset == -ast.a.loffset
+    }
+    else if (ast.declaration.kind === "GlobalVariable") {
+      GenerateAsm(ast.a, context);
+      context.asm += `leaq  _${ast.name}(%rip), %rbx\n`;
+      context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+      context.asm += `mov${x}  ${a}, (%rbx)\n`;
+      // argument left at -ast.loffset since -ast.loffset == -ast.a.loffset
+    }
+    else if (ast.declaration.kind === "LocalVariable") {
+      GenerateAsm(ast.a, context);
+      context.asm += `leaq  $-${ast.declaration.loffset}(%rbp), %rbx\n`;
+      context.asm += `mov${x}  $-${ast.a.loffset}(%rbp), ${a}\n`;
+      context.asm += `mov${x}  ${a}, (%rbx)\n`;
+      // argument left at -ast.loffset since -ast.loffset == -ast.a.loffset
+    }
+    else {
+      throw new Error();
+    }
+  }
+  else if (ast.tag === "LookupPropertyExpression") {
+    throw new Error("LookupPropertyExpression not yet implemented.");
+  }
+  else if (ast.tag === "SetPropertyExpression") {
+    throw new Error("SetPropertyExpression not yet implemented.");
+  }
+  else if (ast.tag === "CallExpression") {
+    GenerateAsm(ast.subject, context);
+    for (let argument of ast.arguments) {
+      GenerateAsm(argument, context);
+    }
+    
+    if (ast.arguments.length >= 1) context.asm += `movq  $-${ast.arguments[0].loffset}(%rbp), %rdi\n`;
+    if (ast.arguments.length >= 2) context.asm += `movq  $-${ast.arguments[1].loffset}(%rbp), %rsi\n`;
+    if (ast.arguments.length >= 3) context.asm += `movq  $-${ast.arguments[2].loffset}(%rbp), %rdx\n`;
+    if (ast.arguments.length >= 4) context.asm += `movq  $-${ast.arguments[3].loffset}(%rbp), %rcx\n`;
+    if (ast.arguments.length >= 5) context.asm += `movq  $-${ast.arguments[4].loffset}(%rbp), %r8\n`;
+    if (ast.arguments.length >= 6) context.asm += `movq  $-${ast.arguments[5].loffset}(%rbp), %r9\n`;
+    
+    for (let i = 6, c = ast.arguments.length; i < c; i++) {
+      let w = widthOf(ast.type);
+      let x, a;
+      
+      if      (w ===  8) x += "b";
+      else if (w === 16) x += "w";
+      else if (w === 32) x += "l";
+      else if (w === 64) x += "q";
+      
+      if      (w ===  8) a = "%al";
+      else if (w === 16) a = "%ax";
+      else if (w === 32) a = "%eax";
+      else if (w === 64) a = "%rax";
+      
+      context.asm += `mov${x}  $-${ast.arguments[i].loffset}(%rbp), %rax\n`;
+      context.asm += `mov${x}  %rax, $${8 * (i - 6)}(%rsp)\n`;
+    }
+    
+    context.asm += `movq  $-${ast.subject.loffset}(%rbp), %rax\n`;
+    context.asm += `callq *%rax\n`;
+    
+    let w = widthOf(ast.type);
+    let x, a;
+    
+    if      (w ===  8) x += "b";
+    else if (w === 16) x += "w";
+    else if (w === 32) x += "l";
+    else if (w === 64) x += "q";
+    
+    if      (w ===  8) a = "%al";
+    else if (w === 16) a = "%ax";
+    else if (w === 32) a = "%eax";
+    else if (w === 64) a = "%rax";
+    
+    context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+  }
+  
+  
+  else if (ast.tag === "IntegerLiteral") {
+    let w = widthOf(ast.type);
+    let x, a;
+    
+    if      (w ===  8) x += "b";
+    else if (w === 16) x += "w";
+    else if (w === 32) x += "l";
+    else if (w === 64) x += "q";
+    
+    if      (w ===  8) a = "%al";
+    else if (w === 16) a = "%ax";
+    else if (w === 32) a = "%eax";
+    else if (w === 64) a = "%rax";
+    
+    context.asm += `mov${x}  $${ast.value}, ${a}\n`;
+    context.asm += `mov${x}  ${a}, $-${ast.loffset}(%rbp)\n`;
+  }
+  else if (ast.tag === "StringLiteral") {
+    let i = context.strings.indexOf(ast.value);
+    
+    if (i === -1) {
+      context.strings.push(ast.value);
+      i = context.strings.length - 1;
+    }
+    
+    context.asm += `leaq  L_string_${i}(%rip), %rax\n`;
+    context.asm += `movq  %rax, $-${ast.loffset}(%rbp)\n`;
+  }
+  else if (ast.tag === "BooleanLiteral") {
+    if (ast.value) {
+      context.asm += `movb  $1, %al\n`;
+      context.asm += `movb  %al, $-${ast.loffset}(%rbp)\n`;
+    }
+    else {
+      context.asm += `movb  $0, %al\n`;
+      context.asm += `movb  %al, $-${ast.loffset}(%rbp)\n`;
+    }
+  }
 
 
   else {

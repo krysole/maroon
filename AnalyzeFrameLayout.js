@@ -81,10 +81,9 @@ function AnalyzeFrameLayout(ast, context) {
     for (let i = 0, c = ast.parameters.length; i < c; i++) {
       let parameter = ast.parameters[i];
       if (i < 6) {
-        parameter.loffset = context.loffset + pad(context.loffset, align(parameter.type));
-        
-        context.loffset = parameter.loffset + sizeof(parameter.type);
-        context.lsize   = Math.max(context.lsize, context.loffset);
+        parameter.loffset = context.loffset + pad(context.loffset, align(parameter.type)) + sizeof(parameter.type);
+        context.loffset   = parameter.loffset;
+        context.lsize     = Math.max(context.lsize, context.loffset);
       }
       else {
         let base      = 0;
@@ -110,9 +109,8 @@ function AnalyzeFrameLayout(ast, context) {
     for (let name in ast.decls) {
       let decl = ast.decls[name];
 
-      decl.loffset = context.loffset + pad(context.loffset, align(decl.type))
-      
-      context.loffset = decl.loffset + sizeof(decl.type);
+      decl.loffset    = context.loffset + pad(context.loffset, align(decl.type)) + sizeof(decl.type);
+      context.loffset = decl.loffset;
       context.lsize   = Math.max(context.lsize, context.loffset);
     }
 
@@ -248,8 +246,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "BooleanCast") {
     preservedloffset = context.loffset;
@@ -258,16 +257,18 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   
   
   else if (ast.tag === "ConditionExpression") {
     AnalyzeFrameLayout(ast.condition, context);
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type))
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset)
   }
   else if (ast.tag === "TernaryExpression") {
     AnalyzeFrameLayout(ast.condition, context);
@@ -287,19 +288,9 @@ function AnalyzeFrameLayout(ast, context) {
     // Technically this is redundant to the above, but it makes the code easier
     // to understand and the space will be colocated with the result from either
     // branch, since they also have the same type.
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
-  }
-  else if (ast.tag === "ComparisonExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.a, context);
-      AnalyzeFrameLayout(ast.b, context);
-    }
-    context.loffset = preservedloffset;
-    
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "InfixExpression") {
     preservedloffset = context.loffset;
@@ -309,8 +300,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "PrefixExpression") {
     preservedloffset = context.loffset;
@@ -319,8 +311,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "DerefExpression") {
     preservedloffset = context.loffset;
@@ -329,22 +322,19 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "AddrExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.a, context);
-    }
-    context.loffset = preservedloffset;
-    
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "LookupExpression") {
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "SetExpression") {
     preservedloffset = context.loffset;
@@ -356,8 +346,9 @@ function AnalyzeFrameLayout(ast, context) {
     // Technically this is redundant to the above, but it makes the code easier
     // to understand and the space will be colocated with the result from either
     // branch, since they also have the same type.
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "LookupPropertyExpression") {
     preservedloffset = context.loffset;
@@ -366,8 +357,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
 
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "SetPropertyExpression") {
     preservedloffset = context.loffset;
@@ -377,8 +369,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
 
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "CallExpression") {
     preservedloffset = context.loffset;
@@ -396,8 +389,9 @@ function AnalyzeFrameLayout(ast, context) {
     }
 
     if (ast.type.tag !== "HaltType") {
-      ast.loffset   = context.loffset;
-      context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
     }
 
     context.psize = Math.max(context.psize, 8 * (ast.arguments.length - 6));
@@ -405,20 +399,24 @@ function AnalyzeFrameLayout(ast, context) {
 
 
   else if (ast.tag === "IntegerLiteral") {
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "StringLiteral") {
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "BooleanLiteral") {
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "NullLiteral") {
-    ast.loffset   = context.loffset;
-    context.lsize = Math.max(context.lsize, context.loffset + sizeof(ast.type));
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
   
   

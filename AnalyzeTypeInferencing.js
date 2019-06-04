@@ -252,14 +252,6 @@ function AnalyzeTypeInferencing(ast) {
     
     ast.type = unify(ast.consiquent.type, ast.alternative.type);
   }
-  else if (ast.tag === "ComparisonExpression") {
-    AnalyzeTypeInferencing(ast.a);
-    AnalyzeTypeInferencing(ast.b);
-    
-    unify(ast.a.type, ast.b.type);
-    
-    ast.type = { tag: "BooleanType" };
-  }
   else if (ast.tag === "InfixExpression") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
@@ -282,8 +274,6 @@ function AnalyzeTypeInferencing(ast) {
     }
   }
   else if (ast.tag === "AddrExpression") {
-    AnalyzeTypeInferencing(ast.a);
-    
     ast.type = { tag: "PointerType", target: ast.a.type };
   }
   else if (ast.tag === "LookupExpression") {

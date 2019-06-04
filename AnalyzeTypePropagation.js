@@ -141,12 +141,6 @@ function AnalyzeTypePropagation(ast) {
     AnalyzeTypePropagation(ast.consiquent);
     AnalyzeTypePropagation(ast.alternative);
   }
-  else if (ast.tag === "ComparisonExpression") {
-    ast.a.type = ast.b.type = unify(ast.a.type, ast.b.type);
-    
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
-  }
   else if (ast.tag === "InfixExpression") {
     ast.a.type = unify(ast.type, ast.a.type);
     ast.b.type = unify(ast.type, ast.b.type);
@@ -163,7 +157,6 @@ function AnalyzeTypePropagation(ast) {
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "AddrExpression") {
-    AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "LookupExpression") {
   }

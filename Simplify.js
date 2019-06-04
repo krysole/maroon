@@ -236,8 +236,9 @@ function Simplify(ast, context) {
     Simplify(ast.alternative, context);
   }
   else if (ast.tag === "ComparisonExpression") {
-    Simplify(ast.a, context);
-    Simplify(ast.b, context);
+    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    
+    Simplify(ast, context);
   }
   else if (ast.tag === "InfixExpression") {
     Simplify(ast.a, context);
@@ -251,6 +252,15 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "AddrExpression") {
     Simplify(ast.a, context);
+    
+    if (ast.a.tag === "LookupExpression") {
+      ast.declaration = ast.a.declaration;
+      
+      delete ast.a;
+    }
+    else {
+      throw new Error("Cannot get address of non-variable expression.");
+    }
   }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
