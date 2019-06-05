@@ -795,6 +795,10 @@ function GenerateAsm(ast, context) {
       context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
   }
+  else if (ast.tag === "NullLiteral") {
+    context.asm += `  xorq  %rax, %rax\n`;
+    context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+  }
 
 
   else {
