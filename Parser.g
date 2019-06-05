@@ -45,10 +45,10 @@ grammar Parser {
     ;
   
   functionDeclaration
-    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps p("]") type:r block:b
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: b }
-    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps p("]") type:r p(";")
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, return: r, body: null }
+    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparameter:va p("]") type:r block:b
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparameter: va, return: r, body: b }
+    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparameter:va p("]") type:r p(";")
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparameter: va, return: r, body: null }
     ;
   
   
@@ -309,6 +309,11 @@ grammar Parser {
       !{ tag: "Parameter", name: n, type: t }
     ;
   
+  vaparameter
+    = p(",") p("...") !true
+    |                 !false
+    ;
+  
   
   binintLiteral
     = ws* char("0") char("b") ( bin | char("_") )+:ds
@@ -321,7 +326,7 @@ grammar Parser {
       !{ tag: "IntegerLiteral", value: v }
     ;
   decintLiteral
-    = ws* dec:d ( dec | char("_") )*:ds
+    = ws* dec:d ( dec | char("_") )*:ds ~restIdChar
       !(new BigNumber(d + ds.join("").replace(/_/g, ""), 10)):v
       !{ tag: "IntegerLiteral", value: v }
     ;
@@ -376,6 +381,7 @@ grammar Parser {
     = ws*
       ( char("([{}])")
         
+      | string("...")
       | string(".") | string(":") | string("?") | string(",") | string(";")
       
       | string("<-")

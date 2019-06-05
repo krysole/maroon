@@ -47,6 +47,16 @@ Object.defineProperty(Array.prototype, "excludes", {
   configurable: true
 });
 
+Object.copy = function copy(source) {
+  let o = {};
+  
+  for (let name in source) {
+    o[name] = source[name];
+  }
+  
+  return o;
+}
+
 Object.transmute = function transmute(target, source) {
   for (let name in target) {
     delete target[name];

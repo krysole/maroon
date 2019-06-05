@@ -344,7 +344,7 @@ function AnalyzeTypeInferencing(ast) {
   
   else if (ast.tag === "IntegerLiteral") {
     if (ast.type == null) {
-      ast.type = { tag: "IntegerType", width: null, signed: null };
+      ast.type = { tag: "IntegerType", width: null, signed: (ast.value.isNegative() ? true : null) };
     }
   }
   else if (ast.tag === "StringLiteral") {

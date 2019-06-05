@@ -50,10 +50,10 @@ function GenerateAsm(ast, context) {
     if (context.strings.length > 0) {
       context.asm += `\n`;
       context.asm += `\n`;
-      context.asm += `  .section __TEXT,__string,cstring_literals`;
+      context.asm += `  .section __TEXT,__string,cstring_literals\n`;
       for (let i = 0, c = context.strings.length; i < c; i++) {
         context.asm += `L_string_${i}:\n`;
-        context.asm += `  .asciz   ${JSON.stringify(s)}\n`;
+        context.asm += `  .asciz   ${JSON.stringify(context.strings[i])}\n`;
       }
     }
     
@@ -390,27 +390,39 @@ function GenerateAsm(ast, context) {
   else if (ast.tag === "ExtendCast") {
     GenerateAsm(ast.argument, context);
     
-    let width = widthOf(ast.argument.type);
-    if      (width ===  8) context.asm += `  movb  -${ast.argument.loffset}(%rbp), %al\n`;
-    else if (width === 16) context.asm += `  movw  -${ast.argument.loffset}(%rbp), %ax\n`;
-    else if (width === 32) context.asm += `  movl  -${ast.argument.loffset}(%rbp), %eax\n`;
-    else if (width === 64) context.asm += `  movq  -${ast.argument.loffset}(%rbp), %rax\n`;
+    let sw = widthOf(ast.argument.type);
     
-    let opcode = (ast.signed ? "movs" : "movz");
-    let sourceWidth  = widthOf(ast.argument.type);
-    let source = "";
-    if      (sourceWidth ===  8) { opcode += "b"; source = "%al";  }
-    else if (sourceWidth === 16) { opcode += "w"; source = "%ax";  }
-    else if (sourceWidth === 32) { opcode += "l"; source = "%eax"; }
-    else if (sourceWidth === 64) { opcode += "q"; source = "%rax"; }
-    let targetWidth = widthOf(ast.type);
-    let target = "";
-    if      (targetWidth ===  8) { opcode += "b"; target = "%al";  }
-    else if (targetWidth === 16) { opcode += "w"; target = "%ax";  }
-    else if (targetWidth === 32) { opcode += "l"; target = "%eax"; }
-    else if (targetWidth === 64) { opcode += "q"; target = "%rax"; }
+    let sx;
+    if      (sw ===  8) sx = "b";
+    else if (sw === 16) sx = "w";
+    else if (sw === 32) sx = "l";
+    else if (sw === 64) sx = "q";
     
-    context.asm += `  ${opcode} ${source}, ${target}\n`;
+    let sa
+    if      (sw ===  8) sa = "%al";
+    else if (sw === 16) sa = "%ax";
+    else if (sw === 32) sa = "%eax";
+    else if (sw === 64) sa = "%rax";
+    
+    let tw = widthOf(ast.type);
+    
+    let tx;
+    if      (tw ===  8) tx = "b";
+    else if (tw === 16) tx = "w";
+    else if (tw === 32) tx = "l";
+    else if (tw === 64) tx = "q";
+    
+    let ta
+    if      (tw ===  8) ta = "%al";
+    else if (tw === 16) ta = "%ax";
+    else if (tw === 32) ta = "%eax";
+    else if (tw === 64) ta = "%rax";
+    
+    let s = (ast.signed ? "s" : "z");
+    
+    context.asm += `  mov${sx}  -${ast.argument.loffset}(%rbp), ${sa}\n`;
+    context.asm += `  mov${s}${sx}${tx} ${sa}, ${ta}\n`;
+    context.asm += `  mov${tx}  ${ta}, -${ast.loffset}(%rbp)\n`;
   }
   else if (ast.tag === "BooleanCast") {
     GenerateAsm(ast.argument, context);
@@ -420,21 +432,25 @@ function GenerateAsm(ast, context) {
       context.asm += `  movb  -${ast.argument.loffset}(%rbp), %al\n`;
       context.asm += `  testb %al, %al\n`;
       context.asm += `  setnz %al\n`;
+      context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
     else if (width === 16) {
       context.asm += `  movw  -${ast.argument.loffset}(%rbp), %ax\n`;
       context.asm += `  testw %ax, %ax\n`;
       context.asm += `  setnz %al\n`;
+      context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
     else if (width === 32) {
       context.asm += `  movl  -${ast.argument.loffset}(%rbp), %eax\n`;
       context.asm += `  testl %eax, %eax\n`;
       context.asm += `  setnz %al\n`;
+      context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
     else if (width === 64) {
       context.asm += `  movq  -${ast.argument.loffset}(%rbp), %rax\n`;
       context.asm += `  testq %rax, %rax\n`;
       context.asm += `  setnz %al\n`;
+      context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
   }
   

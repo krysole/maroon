@@ -122,7 +122,7 @@ function AnalyzeTypePropagation(ast) {
   else if (ast.tag === "NullCast") {
     AnalyzeTypePropagation(ast.argument);
   }
-  else if (ast.tag === "IntegerCast") {
+  else if (ast.tag === "ExtendCast") {
     AnalyzeTypePropagation(ast.argument);
   }
   else if (ast.tag === "BooleanCast") {
@@ -176,15 +176,42 @@ function AnalyzeTypePropagation(ast) {
   }
   else if (ast.tag === "CallExpression") {
     if (ast.subject.type.tag === "FunctionType") {
-      if (ast.subject.type.parameters.length !== ast.arguments.length) {
+      if (ast.arguments.length < ast.subject.type.parameters.length) {
         throw new Error();
       }
       
       for (let i = 0, c = ast.arguments.length; i < c; i++) {
-        let a = ast.arguments[i];
-        let p = ast.subject.type.parameters[i];
-        
-        a.type = unify(p.type, a.type);
+        if (i < ast.subject.type.parameters.length) {
+          let p = ast.subject.type.parameters[i];
+          let a = ast.arguments[i];
+          
+          a.type = unify(p.type, a.type);
+        }
+        else {
+          let a = ast.arguments[i];
+          
+          if      (a.type.tag === "FunctionType") {}
+          else if (a.type.tag === "PointerType")  {}
+          else if (a.type.tag === "IntegerType")  {
+            if (a.type.width == null) {
+              a.type.width  = 64;
+              a.type.signed = (a.type.signed === true ? true : false);
+            }
+            
+            if (a.type.width < 64) {
+              ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed }};
+            }
+          }
+          else if (a.type.tag === "BooleanType") {
+            a.type.width  = 8;
+            a.type.signed = false;
+            
+            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false }};
+          }
+          else if (a.type.tag === "HaltType") throw new Error("Cannot pass argument of halt type as vararg.");
+          else if (a.type.tag === "VoidType") throw new Error("Cannot pass argument of void type as vararg.");
+          else                                throw new Error("Invalid type.");
+        }
       }
     }
     else {

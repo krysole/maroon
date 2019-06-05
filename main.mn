@@ -2,6 +2,7 @@
 -- Test program.
 --
 
+fn printf[[i8] string, ...] i32;
 fn puts[[i8] string] i32;
 fn exit[i32 exit_code] halts;
 
@@ -10,7 +11,10 @@ fn main[] halts {
   --   puts["Hello world.\n"];
   -- }
   
-  let a <- 42 as i32;
+  let a <- 42 as i16;
   
-  exit[a];
+  printf["Lets print a big number, %u.\n", 0xffff_ffff_ffff_ffff as u64];
+  printf["The meaning of everything is %d!\n", a];
+  
+  exit[0];
 }
