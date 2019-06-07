@@ -568,10 +568,10 @@ function GenerateAsm(ast, context) {
       throw new Error(`Cannot generate prefix operator for type ${ast.type.tag}.`);
     }
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     // We can assume that we're only dealing with word types (register types).
     
-    GenerateAst(asm.a, context);
+    GenerateAsm(ast.a, context);
     context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
     context.asm += `  movq  (%rax), %rax\n`;
     context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;

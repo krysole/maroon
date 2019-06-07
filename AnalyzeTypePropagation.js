@@ -153,7 +153,7 @@ function AnalyzeTypePropagation(ast) {
     
     AnalyzeTypePropagation(ast.a);
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "AddrExpression") {

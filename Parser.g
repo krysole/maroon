@@ -267,7 +267,6 @@ grammar Parser {
   
   primaryExpression
     = p("(") expression:a p(")") !a
-    | p("[") expression:a p("]") !{ tag: "DerefExpression", a: a }
     
     | local:n !{ tag: "LookupExpression", name: n }
     

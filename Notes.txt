@@ -1,0 +1,98 @@
+
+{ tag: "AddrExpression",
+  location:
+    { tag: "LookupLocation", 
+      name: "my_variable",
+      declaration:
+        { tag: "Variable", 
+          name: "my_variable",
+          kind: "LocalVariable",
+          loffset: 8 } } }
+
+ASM:
+  leaq  -8(%rbp), %rbx      -- LookupLocation codegen
+  movq  %rbx, -16(%rbp)     -- AddrExpression return result to stack
+
+
+{ tag: "LoadExpression",
+  location:
+    { tag: "LookupLocation", 
+      name: "my_variable",
+      declaration:
+        { tag: "Variable", 
+          name: "my_variable",
+          kind: "LocalVariable",
+          loffset: 8 } } }
+
+ASM:
+  leaq  -8(%rbp), %rbx      -- LookupLocation codegen
+  movq  (%rbx), %rax        -- LoadExpression load variable
+  movq  %rax, -16(%rbp)     -- LoadExpression return result to stack
+
+
+{ tag: "StoreExpression",
+  location:
+    { tag: "LookupLocation", 
+      name: "my_variable",
+      declaration:
+        { tag: "Variable", 
+          name: "my_variable",
+          kind: "LocalVariable",
+          loffset: 8 } } 
+  value:
+    { tag: "IntegerLiteral",
+      value: 42,
+      ... } }
+
+ASM:
+  leaq  -8(%rbp), %rbx      -- LookupLocation codegen
+  movq  $42, %rax           -- IntegerLiteral codegen
+  movq  %rax, -16(%rbp)     -- IntegerLiteral temporary result to stack
+  movq  -16(%rbp), %rax     -- StoreExpression load value
+  movq  %rax, (%rbx)        -- StoreExpression store value
+                            -- Leave loaded value intact on stack as result
+
+
+{ tag: "StoreExpression",
+  location:
+    { tag: "FieldLocation", 
+      subject:
+        { tag: "SymbolLocation",
+          name: "my_struct", 
+          declaration:
+            { tag: "Variable",
+              name: "my_struct",
+              kind: "LocalVariable",
+              loffset: 8 } },
+      name: "field_a" },
+  value:
+    { tag: "IntegerLiteral",
+      value: 42,
+      ... } }
+
+ASM:
+  leaq  -8(%rbp), %rbx     -- SymbolLocation  my_struct.addr
+  addq  0, %rbx            -- FieldLocation   my_struct.field_a.addr
+  movq  $42, %rax          -- IntegerLiteral  42
+  movq  %rax, -16(%rbp)    -- IntegerLiteral  *store-result*
+  movq  -16(%rbp), %rax    -- StoreExpression *load-value*
+  movq  %rax, (%rbx)       -- StoreExpression *store-value-into-location*
+                           -- StoreExpression *leave-value-on-stack*
+
+
+struct Vec2 {
+  i64 x;
+  i64 y;
+}
+
+let a <- Vec2[x: 0, y: 0];
+let b <- Vec2[x: 1, y: 1];
+
+let c <- Vec2 { x: a.x + b.x, y: a.y + b.y };
+
+let ax <- addr[a.x]
+let bx <- addr[b.x]
+
+let cx <- addr[c.x]
+
+ref[cx] <- ref[ax] + ref[bx]

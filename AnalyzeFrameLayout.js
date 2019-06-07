@@ -315,7 +315,7 @@ function AnalyzeFrameLayout(ast, context) {
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     preservedloffset = context.loffset;
     {
       AnalyzeFrameLayout(ast.a, context);

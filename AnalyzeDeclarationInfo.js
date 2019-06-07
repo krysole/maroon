@@ -140,11 +140,10 @@ function AnalyzeDeclarationInfo(ast) {
   else if (ast.tag === "PrefixExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
   else if (ast.tag === "AddrExpression") {
-    AnalyzeDeclarationInfo(ast.a);
   }
   else if (ast.tag === "LookupExpression") {
   }

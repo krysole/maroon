@@ -247,20 +247,11 @@ function Simplify(ast, context) {
   else if (ast.tag === "PrefixExpression") {
     Simplify(ast.a, context);
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     Simplify(ast.a, context);
   }
   else if (ast.tag === "AddrExpression") {
-    Simplify(ast.a, context);
-    
-    if (ast.a.tag === "LookupExpression") {
-      ast.declaration = ast.a.declaration;
-      
-      delete ast.a;
-    }
-    else {
-      throw new Error("Cannot get address of non-variable expression.");
-    }
+    ast.declaration = Symtab.lookup(context.scope, ast.name);
   }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
@@ -282,9 +273,32 @@ function Simplify(ast, context) {
     Simplify(ast.argument, context);
   }
   else if (ast.tag === "CallExpression") {
-    Simplify(ast.subject, context);
-    for (let argument of ast.arguments) {
-      Simplify(argument, context);
+    if (ast.subject.tag === "LookupExpression" && ast.subject.name === "ref") {
+      if (ast.arguments.length !== 1) {
+        throw new Error("ref primitive must have one argument");
+      }
+      
+      Object.transmute(ast, { tag: "RefExpression", a: ast.arguments[0] });
+      
+      Simplify(ast, context);
+    }
+    else if (ast.subject.tag === "LookupExpression" && ast.subject.name === "addr") {
+      if (ast.arguments.length !== 1) {
+        throw new Error("addr primitive must have one argument");
+      }
+      if (ast.arguments[0].tag !== "LookupExpression") {
+        throw new Error("addr primitive must have LookupExpression argument");
+      }
+      
+      Object.transmute(ast, { tag: "AddrExpression", name: ast.arguments[0].name });
+      
+      Simplify(ast, context);
+    }
+    else {
+      Simplify(ast.subject, context);
+      for (let argument of ast.arguments) {
+        Simplify(argument, context);
+      }
     }
   }
   

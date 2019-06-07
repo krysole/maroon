@@ -263,26 +263,30 @@ function AnalyzeTypeInferencing(ast) {
     
     ast.type = ast.a.type;
   }
-  else if (ast.tag === "DerefExpression") {
+  else if (ast.tag === "RefExpression") {
     AnalyzeTypeInferencing(ast.a);
     
     if (ast.a.type.tag === "PointerType") {
-      ast.type = ast.a.target;
+      ast.type = ast.a.type.target;
     }
     else {
-      throw new Error();
+      throw new Error(ast.tag);
     }
   }
   else if (ast.tag === "AddrExpression") {
-    ast.type = { tag: "PointerType", target: ast.a.type };
+    if (ast.declaration.type != null) {
+      ast.type = { tag: "PointerType", target: ast.declaration.type };
+    }
+    else {
+      throw new Error(`Invalid AddrExpression location ${ast.declaration.tag}.`);
+    }
   }
   else if (ast.tag === "LookupExpression") {
     if (ast.declaration.type != null) {
       ast.type = ast.declaration.type;
     }
     else {
-      console.dir(ast);
-      throw new Error();
+      throw new Error(`Invalid LookupExpression location ${ast.declaration.tag}.`);
     }
   }
   else if (ast.tag === "SetExpression") {
