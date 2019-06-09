@@ -30,6 +30,35 @@ function Simplify(ast, context) {
   }
   
   
+  else if (ast.tag === "StructType") {
+    for (let field of ast.fields) {
+      Simplify(field, context);
+    }
+  }
+  else if (ast.tag === "FunctionType") {
+    for (let parameter of ast.parameters) {
+      Simplify(parameter, context);
+    }
+    Simplify(ast.return, context);
+  }
+  else if (ast.tag === "PointerType") {
+    Simplify(ast.target, context);
+  }
+  else if (ast.tag === "IntegerType") {
+  }
+  else if (ast.tag === "BooleanType") {
+  }
+  else if (ast.tag === "HaltType") {
+  }
+  else if (ast.tag === "VoidType") {
+  }
+  
+  
+  else if (ast.tag === "VariableDeclaration") {
+    Simplify(ast.value, context);
+  }
+  
+  
   else if (ast.tag === "FunctionDeclaration") {
     ast.parent = context.scope;
     ast.decls  = {};
@@ -43,6 +72,16 @@ function Simplify(ast, context) {
     }
     Simplify(ast.return, { unit: context.unit, function: ast, scope: ast });
     Simplify(ast.body, { unit: context.unit, function: ast, scope: ast });
+  }
+  
+  
+  else if (ast.tag === "Parameter") {
+    Simplify(ast.type, context);
+  }
+  
+  
+  else if (ast.tag === "Field") {
+    Simplify(ast.type, context);
   }
   
   
@@ -61,30 +100,6 @@ function Simplify(ast, context) {
     for (let statement of ast.statements) {
       Simplify(statement, { unit: context.unit, function: context.function, scope: ast });
     }
-  }
-  
-  
-  else if (ast.tag === "Parameter") {
-    Simplify(ast.type, context);
-  }
-  
-  
-  else if (ast.tag === "FunctionType") {
-    for (let parameter of ast.parameters) {
-      Simplify(ast.parameter, context);
-    }
-    Simplify(ast.return, context);
-  }
-  else if (ast.tag === "PointerType") {
-    Simplify(ast.target, context);
-  }
-  else if (ast.tag === "IntegerType") {
-  }
-  else if (ast.tag === "BooleanType") {
-  }
-  else if (ast.tag === "HaltType") {
-  }
-  else if (ast.tag === "VoidType") {
   }
   
   
@@ -251,7 +266,7 @@ function Simplify(ast, context) {
     Simplify(ast.a, context);
   }
   else if (ast.tag === "AddrExpression") {
-    ast.declaration = Symtab.lookup(context.scope, ast.name);
+    Simplify(ast.location, context);
   }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
@@ -261,16 +276,11 @@ function Simplify(ast, context) {
     }
   }
   else if (ast.tag === "SetExpression") {
-    ast.declaration = Symtab.lookup(context.scope, ast.name);
-    
-    Simplify(ast.a);
+    Simplify(ast.location, context);
+    Simplify(ast.value,    context);
   }
-  else if (ast.tag === "LookupPropertyExpression") {
+  else if (ast.tag === "FieldExpression") {
     Simplify(ast.subject, context);
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    Simplify(ast.subject, context);
-    Simplify(ast.argument, context);
   }
   else if (ast.tag === "CallExpression") {
     if (ast.subject.tag === "LookupExpression" && ast.subject.name === "ref") {
@@ -286,11 +296,8 @@ function Simplify(ast, context) {
       if (ast.arguments.length !== 1) {
         throw new Error("addr primitive must have one argument");
       }
-      if (ast.arguments[0].tag !== "LookupExpression") {
-        throw new Error("addr primitive must have LookupExpression argument");
-      }
       
-      Object.transmute(ast, { tag: "AddrExpression", name: ast.arguments[0].name });
+      Object.transmute(ast, { tag: "AddrExpression", location: ast.arguments[0] });
       
       Simplify(ast, context);
     }

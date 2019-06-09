@@ -6,12 +6,19 @@ fn printf[[i8] string, ...] i32;
 fn puts[[i8] string] i32;
 fn exit[i32 exit_code] halts;
 
+struct A {
+  a: i64;
+  b: i64;
+  c: i64;
+}
+
+let a <- 42 as i16;
+
 fn main[] halts {
   -- if not true and false {
   --   puts["Hello world.\n"];
   -- }
   
-  let a <- 42 as i16;
   let p <- addr[a];
   
   printf["Lets print a big number, %u.\n", 0xffff_ffff_ffff_ffff as u64];

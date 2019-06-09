@@ -31,12 +31,16 @@ function AnalyzeTypePropagation(ast) {
   }
   
   
-  else if (ast.tag === "FunctionDeclaration") {
-    AnalyzeTypePropagation(ast.body);
+  else if (ast.tag.match(/Type$/)) {
   }
   
   
-  else if (ast.tag.match(/Type$/)) {
+  else if (ast.tag === "VariableDeclaration") {
+  }
+  
+  
+  else if (ast.tag === "FunctionDeclaration") {
+    AnalyzeTypePropagation(ast.body);
   }
   
   
@@ -154,9 +158,14 @@ function AnalyzeTypePropagation(ast) {
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "RefExpression") {
+    ast.a.type.target = unify(ast.type, ast.a.type.target);
+    
     AnalyzeTypePropagation(ast.a);
   }
   else if (ast.tag === "AddrExpression") {
+    ast.location.type = unify(ast.type.target, ast.location.type);
+    
+    AnalyzeTypePropagation(ast.location);
   }
   else if (ast.tag === "LookupExpression") {
   }
@@ -165,14 +174,8 @@ function AnalyzeTypePropagation(ast) {
     
     AnalyzeTypePropagation(ast.a);
   }
-  else if (ast.tag === "LookupPropertyExpression") {
+  else if (ast.tag === "FieldExpression") {
     AnalyzeTypePropagation(ast.subject);
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    ast.argument.type = unify(ast.type, ast.argument.type);
-    
-    AnalyzeTypePropagation(ast.subject);
-    AnalyzeTypePropagation(ast.argument);
   }
   else if (ast.tag === "CallExpression") {
     if (ast.subject.type.tag === "FunctionType") {
@@ -199,14 +202,14 @@ function AnalyzeTypePropagation(ast) {
             }
             
             if (a.type.width < 64) {
-              ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed }};
+              ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed, ref: false }};
             }
           }
           else if (a.type.tag === "BooleanType") {
             a.type.width  = 8;
             a.type.signed = false;
             
-            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false }};
+            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false, ref: false }};
           }
           else if (a.type.tag === "HaltType") throw new Error("Cannot pass argument of halt type as vararg.");
           else if (a.type.tag === "VoidType") throw new Error("Cannot pass argument of void type as vararg.");

@@ -18,16 +18,15 @@
 "use strict";
 
 let Symtab   = require("./Symtab.js");
-let unify    = require("./unify.js");
 
 
-function AnalyzeDeclarationInfo(ast) {
+function AnalyzeAddrReferences(ast) {
   if (ast == null) {
   }
   
   
   else if (ast.tag === "Unit") {
-    Symtab.each(ast, false, AnalyzeDeclarationInfo);
+    Symtab.each(ast, false, AnalyzeAddrReferences);
   }
   
   
@@ -36,21 +35,18 @@ function AnalyzeDeclarationInfo(ast) {
   
   
   else if (ast.tag === "VariableDeclaration") {
-    ast.kind = "GlobalVariable";
+    AnalyzeAddrReferences(ast.value);
   }
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    AnalyzeDeclarationInfo(ast.body);
-    
-    if (ast.body != null) ast.kind = "GlobalFunction";
-    else                  ast.kind = "ExternalFunction";
+    AnalyzeAddrReferences(ast.body);
   }
   
   
   else if (ast.tag === "Block") {
     for (let statement of ast.statements) {
-      AnalyzeDeclarationInfo(statement);
+      AnalyzeAddrReferences(statement);
     }
   }
   
@@ -60,30 +56,28 @@ function AnalyzeDeclarationInfo(ast) {
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
       if (variable.value != null) {
-        AnalyzeDeclarationInfo(variable.value);
+        AnalyzeAddrReferences(variable.value);
       }
-      
-      variable.kind = "LocalVariable";
     }
   }
   else if (ast.tag === "IfStatement") {
-    AnalyzeDeclarationInfo(ast.condition);
-    AnalyzeDeclarationInfo(ast.consiquent);
-    AnalyzeDeclarationInfo(ast.alternative);
+    AnalyzeAddrReferences(ast.condition);
+    AnalyzeAddrReferences(ast.consiquent);
+    AnalyzeAddrReferences(ast.alternative);
   }
   else if (ast.tag === "OnceStatement") {
-    AnalyzeDeclarationInfo(ast.body);
+    AnalyzeAddrReferences(ast.body);
   }
   else if (ast.tag === "ForeverStatement") {
-    AnalyzeDeclarationInfo(ast.body);
+    AnalyzeAddrReferences(ast.body);
   }
   else if (ast.tag === "WhileStatement") {
-    AnalyzeDeclarationInfo(ast.condition);
-    AnalyzeDeclarationInfo(ast.body);
+    AnalyzeAddrReferences(ast.condition);
+    AnalyzeAddrReferences(ast.body);
   }
   else if (ast.tag === "DoWhileStatement") {
-    AnalyzeDeclarationInfo(ast.body);
-    AnalyzeDeclarationInfo(ast.condition);
+    AnalyzeAddrReferences(ast.body);
+    AnalyzeAddrReferences(ast.condition);
   }
   else if (ast.tag === "BreakStatement") {
   }
@@ -91,93 +85,117 @@ function AnalyzeDeclarationInfo(ast) {
   }
   else if (ast.tag === "ReturnStatement") {
     if (ast.expression != null) {
-      AnalyzeDeclarationInfo(ast.expression);
+      AnalyzeAddrReferences(ast.expression);
     }
   }
   else if (ast.tag === "GotoStatement") {
   }
   else if (ast.tag === "ExpressionStatement") {
-    AnalyzeDeclarationInfo(ast.expression);
+    AnalyzeAddrReferences(ast.expression);
   }
   else if (ast.tag === "EmptyStatement") {
   }
   
   
   else if (ast.tag === "OrCondition") {
-    AnalyzeDeclarationInfo(ast.a);
-    AnalyzeDeclarationInfo(ast.b);
+    AnalyzeAddrReferences(ast.a);
+    AnalyzeAddrReferences(ast.b);
   }
   else if (ast.tag === "XorCondition") {
-    AnalyzeDeclarationInfo(ast.a);
-    AnalyzeDeclarationInfo(ast.b);
+    AnalyzeAddrReferences(ast.a);
+    AnalyzeAddrReferences(ast.b);
   }
   else if (ast.tag === "AndCondition") {
-    AnalyzeDeclarationInfo(ast.a);
-    AnalyzeDeclarationInfo(ast.b);
+    AnalyzeAddrReferences(ast.a);
+    AnalyzeAddrReferences(ast.b);
   }
   else if (ast.tag === "NotCondition") {
-    AnalyzeDeclarationInfo(ast.a);
+    AnalyzeAddrReferences(ast.a);
   }
   else if (ast.tag === "ComparisonCondition") {
-    AnalyzeDeclarationInfo(ast.a);
-    AnalyzeDeclarationInfo(ast.b);
+    AnalyzeAddrReferences(ast.a);
+    AnalyzeAddrReferences(ast.b);
   }
   else if (ast.tag === "ValueCondition") {
-    AnalyzeDeclarationInfo(ast.value);
+    AnalyzeAddrReferences(ast.value);
+  }
+  
+  
+  else if (ast.tag === "NullCast") {
+    AnalyzeAddrReferences(ast.argument);
+  }
+  else if (ast.tag === "ExtendCast") {
+    AnalyzeAddrReferences(ast.argument);
+  }
+  else if (ast.tag === "BooleanCast") {
+    AnalyzeAddrReferences(ast.argument);
   }
   
   
   else if (ast.tag === "ConditionExpression") {
-    AnalyzeDeclarationInfo(ast.condition);
-  }
-  else if (ast.tag === "TypecastExpression") {
-    AnalyzeDeclarationInfo(ast.argument);
+    AnalyzeAddrReferences(ast.condition);
   }
   else if (ast.tag === "TernaryExpression") {
-    AnalyzeDeclarationInfo(ast.condition);
-    AnalyzeDeclarationInfo(ast.consiquent);
-    AnalyzeDeclarationInfo(ast.alternative);
+    AnalyzeAddrReferences(ast.condition);
+    AnalyzeAddrReferences(ast.consiquent);
+    AnalyzeAddrReferences(ast.alternative);
   }
   else if (ast.tag === "InfixExpression") {
-    AnalyzeDeclarationInfo(ast.a);
-    AnalyzeDeclarationInfo(ast.b);
+    AnalyzeAddrReferences(ast.a);
+    AnalyzeAddrReferences(ast.b);
   }
   else if (ast.tag === "PrefixExpression") {
-    AnalyzeDeclarationInfo(ast.a);
+    AnalyzeAddrReferences(ast.a);
   }
   else if (ast.tag === "RefExpression") {
-    AnalyzeDeclarationInfo(ast.a);
+    AnalyzeAddrReferences(ast.a);
   }
   else if (ast.tag === "AddrExpression") {
+    AnalyzeAddrReferences(ast.location);
+    
+    if (ast.location.type.ref) {
+      ast.location.addr = true;
+    }
+    else {
+      console.dir(ast);
+      throw new Error(`Cannot return address of non reference location.`);
+    }
   }
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
-    AnalyzeDeclarationInfo(ast.a);
+    AnalyzeAddrReferences(ast.location);
+    AnalyzeAddrReferences(ast.value);
+    
+    if (ast.location.type.ref) {
+      ast.location.addr = true;
+    }
+    else {
+      throw new Error(`Cannot assign to non reference location.`);
+    }
   }
-  else if (ast.tag === "LookupPropertyExpression") {
-    AnalyzeDeclarationInfo(ast.subject);
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    AnalyzeDeclarationInfo(ast.subject);
-    AnalyzeDeclarationInfo(ast.argument);
+  else if (ast.tag === "FieldExpression") {
+    AnalyzeAddrReferences(ast.subject);
+    
+    if (ast.subject.type.ref) {
+      ast.subject.addr = true;
+    }
+    else {
+      throw new Error(`Expected struct reference for FieldExpression.`);
+    }
   }
   else if (ast.tag === "CallExpression") {
-    AnalyzeDeclarationInfo(ast.subject);
+    AnalyzeAddrReferences(ast.subject);
     for (let argument of ast.arguments) {
-      AnalyzeDeclarationInfo(argument);
+      AnalyzeAddrReferences(argument);
     }
   }
   
   
-  else if (ast.tag === "IntegerLiteral") {
-  }
-  else if (ast.tag === "StringLiteral") {
-  }
-  else if (ast.tag === "BooleanLiteral") {
-  }
-  else if (ast.tag === "NullLiteral") {
-  }
+  else if (ast.tag === "IntegerLiteral") {}
+  else if (ast.tag === "StringLiteral") {}
+  else if (ast.tag === "BooleanLiteral") {}
+  else if (ast.tag === "NullLiteral") {}
   
   
   else {
@@ -186,4 +204,4 @@ function AnalyzeDeclarationInfo(ast) {
 };
 
 
-module.exports = AnalyzeDeclarationInfo;
+module.exports = AnalyzeAddrReferences;

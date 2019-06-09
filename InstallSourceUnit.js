@@ -34,6 +34,20 @@ let InstallSourceUnit = module.exports = {
     }
   },
   
+  installStructDeclaration(symtab, ast) {
+    ast.tag = "StructType";
+    
+    Symtab.define(symtab, ast.name, ast);
+  },
+  
+  installLetDeclaration(symtab, ast) {
+    for (let variable of ast.variables) {
+      variable.tag = "VariableDeclaration";
+      
+      Symtab.define(symtab, variable.name, variable);
+    }
+  },
+  
   installFunctionDeclaration(symtab, ast) {
     Symtab.define(symtab, ast.name, ast);
   },

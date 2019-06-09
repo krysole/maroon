@@ -31,8 +31,14 @@ function AnalyzeTypeInferencing(ast) {
   }
   
   
+  else if (ast.tag === "VariableDeclaration") {
+  }
+  
+  
   else if (ast.tag === "FunctionDeclaration") {
-    ast.type = { tag: "FunctionType", parameters: ast.parameters, return: ast.return };
+    ast.return.ref = false;
+    
+    ast.type = { tag: "FunctionType", parameters: ast.parameters, return: ast.return, ref: false };
   }
   
   

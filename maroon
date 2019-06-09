@@ -35,6 +35,7 @@ let AnalyzeDeclarationInfo  = require("./AnalyzeDeclarationInfo.js");
 let AnalyzeFunctionTypes    = require("./AnalyzeFunctionTypes.js");
 let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
 let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
+let AnalyzeAddrReferences   = require("./AnalyzeAddrReferences.js");
 
 let AnalyzeFrameLayout      = require("./AnalyzeFrameLayout.js");
 
@@ -102,6 +103,7 @@ function main(argv) {
   AnalyzeFunctionTypes(unit);
   AnalyzeTypeInferencing(unit);
   AnalyzeTypePropagation(unit);
+  AnalyzeAddrReferences(unit);
   
   
   // output(null, inspect(unit, { depth: null }) + "\n");

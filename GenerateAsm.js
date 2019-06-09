@@ -61,6 +61,40 @@ function GenerateAsm(ast, context) {
   }
   
   
+  else if (ast.tag.match(/Type$/)) {
+  }
+  
+  
+  else if (ast.tag === "VariableDeclaration") {
+    let width = widthOf(ast.type);
+    let align = Math.ceil(Math.log(width) / Math.log(2)) - 2;
+    
+    context.asm += `\n`;
+    context.asm += `\n`;
+    context.asm += `  .section __DATA,__data\n`;
+    context.asm += `  .align   ${align - 1}\n`;
+    context.asm += `  .globl   ${ast.name}\n`;
+    context.asm += `${ast.name}:\n`;
+    
+    if (ast.value.tag === "IntegerLiteral") {
+      if      (width ===  8) context.asm += `  .byte    ${ast.value.value}\n`;
+      else if (width === 16) context.asm += `  .word    ${ast.value.value}\n`;
+      else if (width === 32) context.asm += `  .long    ${ast.value.value}\n`;
+      else if (width === 64) context.asm += `  .quad    ${ast.value.value}\n`;
+    }
+    else if (ast.value.tag === "StringLiteral") {
+      throw new Error("Cannot generate variable with string literal value.");
+    }
+    else if (ast.value.tag === "BooleanLiteral") {
+      if (ast.value.value) context.asm += `  .byte    1\n`;
+      else                 context.asm += `  .byte    0\n`;
+    }
+    else if (ast.value.tag === "NullLiteral") {
+      context.asm += `  .quad    0\n`;
+    }
+  }
+  
+  
   else if (ast.tag === "FunctionDeclaration") {
     context.fn    = ast;
     context.label = 0;
@@ -69,7 +103,7 @@ function GenerateAsm(ast, context) {
       context.asm += `\n`;
       context.asm += `\n`;
       context.asm += `  .section __TEXT,__text,regular,pure_instructions\n`;
-      context.asm += `  .globl _${ast.name}\n`;
+      context.asm += `  .globl   _${ast.name}\n`;
       context.asm += `  .p2align 4, 0x90\n`;
       context.asm += `_${ast.name}:\n`;
       context.asm += `LABEL__${ast.name}__PROLOGUE:\n`;
@@ -102,14 +136,6 @@ function GenerateAsm(ast, context) {
       GenerateAsm(statement, context);
     }
   }
-
-
-  else if (ast.tag === "FunctionType") {}
-  else if (ast.tag === "PointerType") {}
-  else if (ast.tag === "IntegerType") {}
-  else if (ast.tag === "BooleanType") {}
-  else if (ast.tag === "HaltType") {}
-  else if (ast.tag === "VoidType") {}
   
   
   else if (ast.tag === "LabelStatement") {
@@ -577,76 +603,69 @@ function GenerateAsm(ast, context) {
     context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
   }
   else if (ast.tag === "AddrExpression") {
-    if (ast.declaration.kind === "ExternalFunction") {
-      throw new Error("Cannot load address of external function.");
-    }
-    else if (ast.declaration.kind === "GlobalFunction") {
-      throw new Error("Cannot load address of global function.");
-    }
-    else if (ast.declaration.kind === "ExternalVariable") {
-      context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
-      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "GlobalVariable") {
-      context.asm += `  leaq  _${ast.name}(%rip), %rax\n`;
-      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "LocalVariable") {
-      context.asm += `  leaq  -${ast.declaration.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-    }
-    else {
-      throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
-    }
+    GenerateAsm(ast.location, context);
+    context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
   }
   else if (ast.tag === "LookupExpression") {
-    // Todo: Perhaps the location can be moved into a seperate *Location node
-    //       which generates the pointer to the data in question in a register
-    //       using 'leaq' as required. LookupExpression could then be replaced
-    //       by a LoadExpression, and SetExpression with StoreExpression, which
-    //       could be used to load and store word types, and word like types
-    //       as required. There would only really be assignment of arrays and
-    //       structs to deal with otherwise, which can't be handled as loads
-    //       and stores anyway, and must be converted to copy operations at
-    //       some point, specifically, after type analysis.
-    
-    
-    let w = widthOf(ast.type);
-    let x, a;
-    
-    if      (w ===  8) x = "b";
-    else if (w === 16) x = "w";
-    else if (w === 32) x = "l";
-    else if (w === 64) x = "q";
-    
-    if      (w ===  8) a = "%al";
-    else if (w === 16) a = "%ax";
-    else if (w === 32) a = "%eax";
-    else if (w === 64) a = "%rax";
-    
-    if (ast.declaration.kind === "ExternalFunction") {
-      context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
-      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "GlobalFunction") {
-      context.asm += `  leaq  _${ast.name}(%rip), %rax\n`;
-      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "ExternalVariable") {
-      context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
-      context.asm += `  mov${x}  (%rax), ${a}\n`;
-      context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "GlobalVariable") {
-      context.asm += `  mov${x}  _${ast.name}(%rip), ${a}\n`;
-      context.asm += `  mov${a}  ${a}, -${ast.loffset}(%rbp)\n`;
-    }
-    else if (ast.declaration.kind === "LocalVariable") {
-      context.asm += `  mov${x}  -${ast.declaration.loffset}(%rbp), ${a}\n`;
-      context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+    if (ast.addr) {
+      if (ast.declaration.kind === "ExternalFunction") {
+        throw new Error("Cannot load address of external function.");
+      }
+      else if (ast.declaration.kind === "GlobalFunction") {
+        throw new Error("Cannot load address of global function.");
+      }
+      else if (ast.declaration.kind === "ExternalVariable") {
+        context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+      }
+      else if (ast.declaration.kind === "GlobalVariable") {
+        context.asm += `  leaq  ${ast.name}(%rip), %rax\n`;
+      }
+      else if (ast.declaration.kind === "LocalVariable") {
+        context.asm += `  leaq  -${ast.declaration.loffset}(%rbp), %rax\n`;
+      }
+      else {
+        console.dir(ast);
+        throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
+      }
     }
     else {
-      throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
+      let w = widthOf(ast.type);
+      let x, a;
+      
+      if      (w ===  8) x = "b";
+      else if (w === 16) x = "w";
+      else if (w === 32) x = "l";
+      else if (w === 64) x = "q";
+      
+      if      (w ===  8) a = "%al";
+      else if (w === 16) a = "%ax";
+      else if (w === 32) a = "%eax";
+      else if (w === 64) a = "%rax";
+      
+      if (ast.declaration.kind === "ExternalFunction") {
+        context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.declaration.kind === "GlobalFunction") {
+        context.asm += `  leaq  _${ast.name}(%rip), %rax\n`;
+        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.declaration.kind === "ExternalVariable") {
+        context.asm += `  movq  _${ast.name}@GOTPCREL(%rip), %rax\n`;
+        context.asm += `  mov${x}  (%rax), ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.declaration.kind === "GlobalVariable") {
+        context.asm += `  mov${x}  ${ast.name}(%rip), ${a}\n`;
+        context.asm += `  mov${a}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.declaration.kind === "LocalVariable") {
+        context.asm += `  mov${x}  -${ast.declaration.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else {
+        throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
+      }
     }
   }
   else if (ast.tag === "SetExpression") {
@@ -678,7 +697,7 @@ function GenerateAsm(ast, context) {
     }
     else if (ast.declaration.kind === "GlobalVariable") {
       GenerateAsm(ast.a, context);
-      context.asm += `  leaq  _${ast.name}(%rip), %rbx\n`;
+      context.asm += `  leaq  ${ast.name}(%rip), %rbx\n`;
       context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
       context.asm += `  mov${x}  ${a}, (%rbx)\n`;
       // argument left at -ast.loffset since -ast.loffset == -ast.a.loffset
@@ -694,11 +713,8 @@ function GenerateAsm(ast, context) {
       throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
     }
   }
-  else if (ast.tag === "LookupPropertyExpression") {
-    throw new Error("LookupPropertyExpression not yet implemented.");
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    throw new Error("SetPropertyExpression not yet implemented.");
+  else if (ast.tag === "FieldExpression") {
+    throw new Error("FieldExpression not yet implemented.");
   }
   else if (ast.tag === "CallExpression") {
     GenerateAsm(ast.subject, context);

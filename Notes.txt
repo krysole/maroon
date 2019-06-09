@@ -96,3 +96,27 @@ let bx <- addr[b.x]
 let cx <- addr[c.x]
 
 ref[cx] <- ref[ax] + ref[bx]
+
+
+
+
+
+a             <- 0
+ref[a]        <- 0
+
+ref[ref[a]]   <- 0
+
+a.b           <- 0
+ref[a.b]      <- 0
+
+a.b.c         <- 0
+
+ref[a].b      <- 0
+ref[ref[a].b] <- 0
+
+
+
+
+
+
+

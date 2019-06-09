@@ -32,7 +32,7 @@ grammar Parser {
   
   structDeclaration
     = id("struct") local:n p("{") structField*:fs p("}")
-      !{ tag: "StructTypeDeclaration", name: n, fields: fs }
+      !{ tag: "StructDeclaration", name: n, fields: fs }
     ;
   structField
     = id:n p(":") type:t p(";")
@@ -179,16 +179,12 @@ grammar Parser {
   
   logicalNotExpression
     = id("not") logicalNotExpression:a !{ tag: "NotExpression", a: a }
-    | assignmentExpression
+    | setExpression
     ;
   
-  assignmentExpression
+  setExpression
     = typecastExpression:l p("<-") assignmentExpression:e
-      ?(l.tag === "LookupPropertyExpression")
-      !{ tag: "SetPropertyExpression", subject: l.subject, name: l.selector, argument: e }
-    | typecastExpression:l p("<-") assignmentExpression:e
-      ?(l.tag === "LookupExpression")
-      !{ tag: "SetExpression", name: l.name, a: e }
+      !{ tag: "SetExpression", location: l, value: e }
     | typecastExpression
     ;
   
@@ -259,8 +255,8 @@ grammar Parser {
   
   secondaryExpression
     = primaryExpression:e
-      ( p(".") id:n                               !{ tag: "LookupPropertyExpression", subject: e, name: n }:e
-      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression", subject: e, arguments: as }:e
+      ( p(".") id:n                               !{ tag: "FieldExpression", subject: e, name: n }:e
+      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
       )*
       !e
     ;

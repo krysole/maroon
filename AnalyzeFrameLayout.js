@@ -59,6 +59,14 @@ function AnalyzeFrameLayout(ast, context) {
   }
   
   
+  else if (ast.tag.match(/Type$/)) {
+  }
+  
+  
+  else if (ast.tag === "VariableDeclaration") {
+  }
+  
+  
   else if (ast.tag === "FunctionDeclaration") {
     context.fn      = ast;
     context.loffset = 0;
@@ -117,20 +125,6 @@ function AnalyzeFrameLayout(ast, context) {
     for (let statement of ast.statements) {
       AnalyzeFrameLayout(statement, context);
     }
-  }
-  
-  
-  else if (ast.tag === "FunctionType") {
-  }
-  else if (ast.tag === "PointerType") {
-  }
-  else if (ast.tag === "IntegerType") {
-  }
-  else if (ast.tag === "BooleanType") {
-  }
-  else if (ast.tag === "HaltType") {
-  }
-  else if (ast.tag === "VoidType") {
   }
   
   
@@ -332,9 +326,14 @@ function AnalyzeFrameLayout(ast, context) {
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
   else if (ast.tag === "LookupExpression") {
-    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-    context.loffset = ast.loffset;
-    context.lsize   = Math.max(context.lsize, context.loffset);
+    if (ast.addr) {
+      // Just leave the address in a working register.
+    }
+    else {
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+    }
   }
   else if (ast.tag === "SetExpression") {
     preservedloffset = context.loffset;
@@ -343,35 +342,25 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    // Technically this is redundant to the above, but it makes the code easier
-    // to understand and the space will be colocated with the result from either
-    // branch, since they also have the same type.
     ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
-  else if (ast.tag === "LookupPropertyExpression") {
+  else if (ast.tag === "FieldExpression") {
     preservedloffset = context.loffset;
     {
       AnalyzeFrameLayout(ast.subject, context);
     }
     context.loffset = preservedloffset;
-
-    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-    context.loffset = ast.loffset;
-    context.lsize   = Math.max(context.lsize, context.loffset);
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.subject, context);
-      AnalyzeFrameLayout(ast.argument, context);
+    
+    if (ast.addr) {
+      // Just leave the address in a working register.
     }
-    context.loffset = preservedloffset;
-
-    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-    context.loffset = ast.loffset;
-    context.lsize   = Math.max(context.lsize, context.loffset);
+    else {
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+    }
   }
   else if (ast.tag === "CallExpression") {
     preservedloffset = context.loffset;
