@@ -327,6 +327,7 @@ function AnalyzeTypeInferencing(ast) {
     }
     
     if (field != null) {
+      ast.field    = field;
       ast.type     = Object.copy(field.type);
       ast.type.ref = ast.subject.type.ref;
     }
@@ -340,12 +341,13 @@ function AnalyzeTypeInferencing(ast) {
       AnalyzeTypeInferencing(argument);
     }
     
-    if (ast.subject.type.tag === "FunctionType") {
-      ast.type     = Object.copy(ast.subject.type.return);
-      ast.type.ref = ast.type.ref;
-    }
-    else {
-      throw new Error(`CallExpression expected a FunctionType subject.`);
+    ast.type     = Object.copy(ast.subject.type.return);
+    ast.type.ref = ast.type.ref;
+  }
+  else if (ast.tag === "InitStructExpression") {
+    for (let a of ast.arguments) {
+      if (a.tag === "Keyval") AnalyzeTypeInferencing(a.v);
+      else                    AnalyzeTypeInferencing(a);
     }
   }
   
@@ -369,6 +371,10 @@ function AnalyzeTypeInferencing(ast) {
     if (ast.type == null) {
       ast.type = { tag: "PointerType", target: null, ref: false };
     }
+  }
+  
+  
+  else if (ast.tag === "Initializer") {
   }
   
   

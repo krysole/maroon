@@ -37,6 +37,7 @@ let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
 let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
 let AnalyzeAddrReferences   = require("./AnalyzeAddrReferences.js");
 
+let AnalyzeStructLayout     = require("./AnalyzeStructLayout.js");
 let AnalyzeFrameLayout      = require("./AnalyzeFrameLayout.js");
 
 let GenerateAsm             = require("./GenerateAsm.js");
@@ -109,6 +110,7 @@ function main(argv) {
   // output(null, inspect(unit, { depth: null }) + "\n");
 
 
+  AnalyzeStructLayout(unit);
   AnalyzeFrameLayout(unit);
   
   

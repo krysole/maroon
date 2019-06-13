@@ -257,6 +257,7 @@ grammar Parser {
     = primaryExpression:e
       ( p(".") id:n                               !{ tag: "FieldExpression", subject: e, name: n }:e
       | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
+      | p("[") ( keyval     ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
       )*
       !e
     ;
@@ -303,10 +304,14 @@ grammar Parser {
     = type:t local:n
       !{ tag: "Parameter", name: n, type: t }
     ;
-  
   vaparameter
     = p(",") p("...") !true
     |                 !false
+    ;
+  
+  keyval
+    = id:n expression:v
+      !{ tag: "Keyval", key: n, type: v }
     ;
   
   

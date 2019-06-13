@@ -24,9 +24,9 @@ function pad(offset, alignment) {
   return (alignment - (offset % alignment)) % alignment;
 }
 
-
 function align(type) {
-  if      (type.tag === "FunctionType") return 8;
+  if      (type.tag === "StructType")   return type.align;
+  else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
@@ -36,7 +36,8 @@ function align(type) {
 }
 
 function sizeof(type) {
-  if      (type.tag === "FunctionType") return 8;
+  if      (type.tag === "StructType")   return type.size;
+  else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
@@ -75,15 +76,19 @@ function AnalyzeFrameLayout(ast, context) {
     
     
     // [[Stack Frame Layout]]
-    // rsp : **top of stack**
-    //     : parameter window
-    //     : parameter window 16 byte alignment padding
-    //     : temporaries
-    //     : locals
-    // rbp : register parameters spilled to stack
-    //     : preserved rbp
-    //     : preserved rip
     //     : stack parameters placed by caller
+    //     : preserved rip
+    // rbp : preserved rbp
+    //     : preserved rbx
+    //     : preserved register parameters
+    //     : locals/temporaries
+    //     : parameter window padding to 16 bytes
+    // rsp : parameter window
+    
+    
+    ast.rbxoffset   = context.loffset + 8; // rbx space
+    context.loffset = ast.rbx;
+    context.lsize   = Math.max(context.lsize, context.loffset);
     
     
     for (let i = 0, c = ast.parameters.length; i < c; i++) {
@@ -316,9 +321,14 @@ function AnalyzeFrameLayout(ast, context) {
     }
     context.loffset = preservedloffset;
     
-    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-    context.loffset = ast.loffset;
-    context.lsize   = Math.max(context.lsize, context.loffset);
+    if (ast.addr) {
+      // Just leave the address in a working register.
+    }
+    else {
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+    }
   }
   else if (ast.tag === "AddrExpression") {
     ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
@@ -338,7 +348,11 @@ function AnalyzeFrameLayout(ast, context) {
   else if (ast.tag === "SetExpression") {
     preservedloffset = context.loffset;
     {
-      AnalyzeFrameLayout(ast.a, context);
+      AnalyzeFrameLayout(ast.location, context);
+      ast.addroffset  = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+      AnalyzeFrameLayout(ast.value, context);
     }
     context.loffset = preservedloffset;
     
@@ -363,11 +377,13 @@ function AnalyzeFrameLayout(ast, context) {
     }
   }
   else if (ast.tag === "CallExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.subject, context);
+    if (ast.subject.type.tag === "FunctionType") {
+      preservedloffset = context.loffset;
+      {
+        AnalyzeFrameLayout(ast.subject, context);
+      }
+      context.loffset = preservedloffset;
     }
-    context.loffset = preservedloffset;
 
     for (let argument of ast.arguments) {
       preservedloffset = context.loffset;
@@ -377,13 +393,37 @@ function AnalyzeFrameLayout(ast, context) {
       context.loffset = preservedloffset;
     }
 
-    if (ast.type.tag !== "HaltType") {
+    if (ast.type.tag !== "HaltType" && ast.type.tag !== "VoidType") {
       ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
       context.loffset = ast.loffset;
       context.lsize   = Math.max(context.lsize, context.loffset);
     }
 
-    context.psize = Math.max(context.psize, 8 * (ast.arguments.length - 6));
+    if (ast.subject.type.tag === "FunctionType") {
+      context.psize = Math.max(context.psize, 8 * (ast.arguments.length - 6));
+    }
+  }
+  else if (ast.tag === "InitStructExpression") {
+    if (ast.arguments.length === 0) {
+    }
+    else if (ast.arguments[i].tag === "Keyval") {
+      for (let argument of ast.arguments) {
+        preservedloffset = context.loffset;
+        {
+          AnalyzeFrameLayout(argument.value, context);
+        }
+        context.loffset = preservedloffset;
+      }
+    }
+    else {
+      for (let argument of ast.arguments) {
+        preservedloffset = context.loffset;
+        {
+          AnalyzeFrameLayout(argument, context);
+        }
+        context.loffset = preservedloffset;
+      }
+    }
   }
 
 

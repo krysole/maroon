@@ -301,11 +301,21 @@ function Simplify(ast, context) {
       
       Simplify(ast, context);
     }
+    else if (ast.subject.tag === "StructType") {
+      Object.transmute(ast, { tag: "InitStructExpression", type: ast.subject, arguments: ast.arguments });
+      
+      Simplify(ast, context);
+    }
     else {
       Simplify(ast.subject, context);
       for (let argument of ast.arguments) {
         Simplify(argument, context);
       }
+    }
+  }
+  else if (ast.tag === "InitStructExpression") {
+    for (let argument of ast.arguments) {
+      Simplify(argument, context);
     }
   }
   

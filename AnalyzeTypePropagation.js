@@ -36,6 +36,7 @@ function AnalyzeTypePropagation(ast) {
   
   
   else if (ast.tag === "VariableDeclaration") {
+    AnalyzeTypePropagation(ast.value);
   }
   
   
@@ -178,52 +179,103 @@ function AnalyzeTypePropagation(ast) {
     AnalyzeTypePropagation(ast.subject);
   }
   else if (ast.tag === "CallExpression") {
-    if (ast.subject.type.tag === "FunctionType") {
-      if (ast.arguments.length < ast.subject.type.parameters.length) {
-        throw new Error();
+    if (ast.arguments.length < ast.subject.type.parameters.length) {
+      throw new Error(`Cannot call function with too few arguments.`);
+    }
+    if (ast.arguments.length > ast.subject.type.parameters.length && !ast.subject.type.vaparameter) {
+      throw new Error(`Cannot call function without varargs with varargs.`);
+    }
+    if (ast.arguments.length > 0 && ast.arguments[0].tag === "Keyval") {
+      throw new Error(`Keyval arguments are not yet supported for function calls.`);
+    }
+    
+    for (let i = 0, c = ast.arguments.length; i < c; i++) {
+      if (i < ast.subject.type.parameters.length) {
+        let p = ast.subject.type.parameters[i];
+        let a = ast.arguments[i];
+        
+        a.type = unify(p.type, a.type);
       }
-      
-      for (let i = 0, c = ast.arguments.length; i < c; i++) {
-        if (i < ast.subject.type.parameters.length) {
-          let p = ast.subject.type.parameters[i];
-          let a = ast.arguments[i];
-          
-          a.type = unify(p.type, a.type);
-        }
-        else {
-          let a = ast.arguments[i];
-          
-          if      (a.type.tag === "FunctionType") {}
-          else if (a.type.tag === "PointerType")  {}
-          else if (a.type.tag === "IntegerType")  {
-            if (a.type.width == null) {
-              a.type.width  = 64;
-              a.type.signed = (a.type.signed === true ? true : false);
-            }
-            
-            if (a.type.width < 64) {
-              ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed, ref: false }};
-            }
+      else {
+        let a = ast.arguments[i];
+        
+        if      (a.type.tag === "StructType")   throw new Error(`Cannot pass struct as parameter.`);
+        else if (a.type.tag === "FunctionType") {}
+        else if (a.type.tag === "PointerType")  {}
+        else if (a.type.tag === "IntegerType")  {
+          if (a.type.width == null) {
+            a.type.width  = 64;
+            a.type.signed = (a.type.signed === true ? true : false);
           }
-          else if (a.type.tag === "BooleanType") {
-            a.type.width  = 8;
-            a.type.signed = false;
-            
-            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false, ref: false }};
+          
+          if (a.type.width < 64) {
+            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed, ref: false }};
           }
-          else if (a.type.tag === "HaltType") throw new Error("Cannot pass argument of halt type as vararg.");
-          else if (a.type.tag === "VoidType") throw new Error("Cannot pass argument of void type as vararg.");
-          else                                throw new Error("Invalid type.");
         }
+        else if (a.type.tag === "BooleanType") {
+          a.type.width  = 8;
+          a.type.signed = false;
+          
+          ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false, ref: false }};
+        }
+        else if (a.type.tag === "HaltType") throw new Error("Cannot pass argument of halt type as vararg.");
+        else if (a.type.tag === "VoidType") throw new Error("Cannot pass argument of void type as vararg.");
+        else                                throw new Error("Invalid type.");
       }
     }
-    else {
-      throw new Error();
+    
+    if (ast.type.tag === "StructType") {
+      throw new Error(`Cannot return struct type.`);
     }
     
     AnalyzeTypePropagation(ast.subject);
     for (let argument of ast.arguments) {
       AnalyzeTypePropagation(argument);
+    }
+  }
+  else if (ast.tag === "InitStructExpression") {
+    if (ast.arguments.length === 0) {
+    }
+    else if (ast.arguments[0].tag === "Keyval") {
+      let names = [];
+      
+      for (let kv of ast.arguments) {
+        if (kv.tag !== "Keyval") throw new Error(`Expected all or none of the struct initializers to be keyed.`);
+        
+        kv.field = ast.type.fields.find(f => kv.key === f.name);
+        
+        if (names.includes(kv.name)) throw new Error(`Field already specified in struct initializer.`);
+        if (kv.field == null)        throw new Error(`Field does not exist in struct ${kv.name}.`);
+        
+        names.push(kv.name);
+        
+        kv.value.type = unify(kv.field.type, kv.value.type);
+      }
+      
+      ast.clear = [];
+      
+      for (let f of ast.type.fields) {
+        if (ast.arguments.find(a => a.key === f.name) == null) {
+          ast.clear.push(f);
+        }
+      }
+    }
+    else {
+      if (ast.arguments.length !== ast.type.fields.length) {
+        throw new Error(`Incorrect number of arguments in struct initializer.`);
+      }
+      
+      for (let i = 0, c = ast.arguments.length; i < c; i++) {
+        let f = ast.type.fields[i];
+        let a = ast.arguments[i];
+        
+        a.type = unify(f.type, a.type);
+      }
+    }
+    
+    for (let a of ast.arguments) {
+      if (a.tag === "Keyval") AnalyzeTypePropagation(a.v);
+      else                    AnalyzeTypePropagation(a);
     }
   }
   
@@ -245,6 +297,10 @@ function AnalyzeTypePropagation(ast) {
     else {
       throw new Error("Null literal was not typed during type propagation.");
     }
+  }
+  
+  
+  else if (ast.tag === "Initializer") {
   }
   
   
