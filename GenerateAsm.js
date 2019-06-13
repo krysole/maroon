@@ -190,8 +190,13 @@ function GenerateAsm(ast, context) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
-    let alignment = Math.ceil(Math.log(align(ast.type) * 8) / Math.log(2)) - 2;
+    let type      = (ast.type.orig != null ? ast.type.orig : ast.type);
+    let alignment = Math.ceil(Math.log(align(type) * 8) / Math.log(2)) - 2;
     
     context.asm += `\n`;
     context.asm += `\n`;
@@ -245,7 +250,7 @@ function GenerateAsm(ast, context) {
         }
         else {
           for (let a of value.arguments) {
-            emit(a);
+            emitInitializer(a);
           }
         }
       }
@@ -261,7 +266,7 @@ function GenerateAsm(ast, context) {
       }
       else if (value.tag === "BooleanLiteral") {
         if (value.value) context.asm += `  .byte    1\n`;
-        else                 context.asm += `  .byte    0\n`;
+        else             context.asm += `  .byte    0\n`;
       }
       else if (value.tag === "NullLiteral") {
         context.asm += `  .quad    0\n`;
@@ -778,7 +783,6 @@ function GenerateAsm(ast, context) {
         context.asm += `  leaq  -${ast.declaration.loffset}(%rbp), %rax\n`;
       }
       else {
-        console.dir(ast);
         throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
       }
     }

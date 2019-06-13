@@ -54,6 +54,10 @@ function Simplify(ast, context) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
     Simplify(ast.value, context);
   }
@@ -272,7 +276,14 @@ function Simplify(ast, context) {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
     
     if (ast.declaration.tag.match(/Type$/)) {
-      Object.transmute(ast, ast.declaration);
+      let decl = ast.declaration;
+      Object.transmute(ast, decl);
+      ast.orig = decl;
+    }
+    else if (ast.declaration.tag.match(/Primitive/)) {
+      let decl = ast.declaration;
+      Object.transmute(ast, decl);
+      ast.orig = decl;
     }
   }
   else if (ast.tag === "SetExpression") {
@@ -283,7 +294,9 @@ function Simplify(ast, context) {
     Simplify(ast.subject, context);
   }
   else if (ast.tag === "CallExpression") {
-    if (ast.subject.tag === "LookupExpression" && ast.subject.name === "ref") {
+    Simplify(ast.subject, context);
+    
+    if (ast.subject.tag === "Primitive" && ast.subject.name === "ref") {
       if (ast.arguments.length !== 1) {
         throw new Error("ref primitive must have one argument");
       }
@@ -292,7 +305,7 @@ function Simplify(ast, context) {
       
       Simplify(ast, context);
     }
-    else if (ast.subject.tag === "LookupExpression" && ast.subject.name === "addr") {
+    else if (ast.subject.tag === "Primitive" && ast.subject.name === "addr") {
       if (ast.arguments.length !== 1) {
         throw new Error("addr primitive must have one argument");
       }
@@ -307,7 +320,6 @@ function Simplify(ast, context) {
       Simplify(ast, context);
     }
     else {
-      Simplify(ast.subject, context);
       for (let argument of ast.arguments) {
         Simplify(argument, context);
       }

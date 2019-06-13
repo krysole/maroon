@@ -64,6 +64,10 @@ function AnalyzeFrameLayout(ast, context) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
   }
   

@@ -32,12 +32,10 @@ let InstallSourceUnit       = require("./InstallSourceUnit.js");
 let Simplify                = require("./Simplify.js");
 
 let AnalyzeDeclarationInfo  = require("./AnalyzeDeclarationInfo.js");
-let AnalyzeFunctionTypes    = require("./AnalyzeFunctionTypes.js");
 let AnalyzeTypeInferencing  = require("./AnalyzeTypeInferencing.js");
 let AnalyzeTypePropagation  = require("./AnalyzeTypePropagation.js");
 let AnalyzeAddrReferences   = require("./AnalyzeAddrReferences.js");
 
-let AnalyzeStructLayout     = require("./AnalyzeStructLayout.js");
 let AnalyzeFrameLayout      = require("./AnalyzeFrameLayout.js");
 
 let GenerateAsm             = require("./GenerateAsm.js");
@@ -101,7 +99,6 @@ function main(argv) {
   
   
   AnalyzeDeclarationInfo(unit);
-  AnalyzeFunctionTypes(unit);
   AnalyzeTypeInferencing(unit);
   AnalyzeTypePropagation(unit);
   AnalyzeAddrReferences(unit);
@@ -110,7 +107,6 @@ function main(argv) {
   // output(null, inspect(unit, { depth: null }) + "\n");
 
 
-  AnalyzeStructLayout(unit);
   AnalyzeFrameLayout(unit);
   
   

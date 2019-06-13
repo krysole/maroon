@@ -12,7 +12,7 @@ struct A {
   c: i64;
 }
 
-let a <- 42 as i16;
+let a <- A[1, 2, 3];
 
 fn main[] halts {
   -- if not true and false {
@@ -22,7 +22,7 @@ fn main[] halts {
   let p <- addr[a];
   
   printf["Lets print a big number, %u.\n", 0xffff_ffff_ffff_ffff as u64];
-  printf["The meaning of everything is %d!\n", ref[p]];
+  printf["The meaning of everything is %d!\n", ref[p].a];
   
   exit[0];
 }

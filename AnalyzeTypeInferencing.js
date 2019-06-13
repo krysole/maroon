@@ -35,6 +35,10 @@ function AnalyzeTypeInferencing(ast) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
     AnalyzeTypeInferencing(ast.value);
     

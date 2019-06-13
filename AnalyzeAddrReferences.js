@@ -34,6 +34,10 @@ function AnalyzeAddrReferences(ast) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
     AnalyzeAddrReferences(ast.value);
   }
@@ -157,7 +161,6 @@ function AnalyzeAddrReferences(ast) {
       ast.location.addr = true;
     }
     else {
-      console.dir(ast);
       throw new Error(`Cannot return address of non reference location.`);
     }
   }
@@ -188,6 +191,20 @@ function AnalyzeAddrReferences(ast) {
     AnalyzeAddrReferences(ast.subject);
     for (let argument of ast.arguments) {
       AnalyzeAddrReferences(argument);
+    }
+  }
+  else if (ast.tag === "InitStructExpression") {
+    if (ast.arguments.length === 0) {
+    }
+    else if (ast.arguments[0].tag === "Keyval") {
+      for (let kv of ast.arguments) {
+        AnalyzeAddrReferences(kv.value);
+      }
+    }
+    else {
+      for (let a of ast.arguments) {
+        AnalyzeAddrReferences(a);
+      }
     }
   }
   

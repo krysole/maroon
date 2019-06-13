@@ -31,18 +31,19 @@ function AnalyzeTypeInferencing(ast) {
   }
   
   
+  else if (ast.tag.match(/Type$/)) {
+  }
+  
+  
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
   }
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    ast.return.ref = false;
-    
-    ast.type = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return, ref: false };
-  }
-  
-  
-  else if (ast.tag.match(/Type$/)) {
   }
   
   

@@ -35,6 +35,10 @@ function AnalyzeTypePropagation(ast) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
     AnalyzeTypePropagation(ast.value);
   }

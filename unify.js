@@ -19,17 +19,12 @@
 
 
 function unify(a, b) {
-  if (a.tag === "ArrayType" && b.tag === "ArrayType") {
-    if (a.ref !== b.ref) throw new Error("Incompatible boolean type ref flag.");
-
-    unify(a.type, b.type);
-    if (a.count !== b.count) throw new Error("ArrayType count mismatch.");
+  if (a.tag === "StructType" && b.tag === "StructType") {
+    if (a.name !== b.name) throw new Error("Incompatible struct types.");
     
     return a;
   }
   else if (a.tag === "FunctionType" && b.tag === "FunctionType") {
-    if (a.ref !== b.ref) throw new Error("Incompatible function type ref flag.");
-
     if (a.parameters.length !== b.parameters.length) throw new Error("Function arity mismatch.");
     for (let i = 0, c = a.parameters.length; i < c; i++) {
       let pa = a.parameters[i];

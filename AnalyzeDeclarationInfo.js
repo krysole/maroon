@@ -18,10 +18,32 @@
 "use strict";
 
 let Symtab   = require("./Symtab.js");
-let unify    = require("./unify.js");
 
 
-function AnalyzeDeclarationInfo(ast) {
+function pad(offset, alignment) {
+  return (alignment - (offset % alignment)) % alignment;
+}
+
+function align(type) {
+  if      (type.tag === "StructType")   return type.align;
+  else if (type.tag === "FunctionType") return 8;
+  else if (type.tag === "PointerType")  return 8;
+  else if (type.tag === "IntegerType")  return type.width / 8;
+  else if (type.tag === "BooleanType")  return 1;
+  else                                  throw new Error(`Invalid field type ${type.tag}.`);
+}
+
+function sizeof(type) {
+  if      (type.tag === "StructType")   return type.size;
+  else if (type.tag === "FunctionType") return 8;
+  else if (type.tag === "PointerType")  return 8;
+  else if (type.tag === "IntegerType")  return type.width / 8;
+  else if (type.tag === "BooleanType")  return 1;
+  else                                  throw new Error(`Invalid field type ${type.tag}.`);
+}
+
+
+function AnalyzeDeclarationInfo(ast, path) {
   if (ast == null) {
   }
   
@@ -31,7 +53,34 @@ function AnalyzeDeclarationInfo(ast) {
   }
   
   
+  else if (ast.tag === "StructType") {
+    if      (path == null)        path = (ast);
+    else if (!path.includes(ast)) path.push(ast);
+    else                          throw new Error(`Struct definition cycle detected: ${path}.`);
+    
+    ast.align = 0;
+    ast.size  = 0;
+    
+    for (let field of ast.fields) {
+      AnalyzeDeclarationInfo(field.type, path);
+      
+      field.offset = ast.size + pad(ast.size, align(field.type));
+      
+      ast.align = Math.max(ast.align, align(field.type));
+      ast.size  = field.offset + sizeof(field.type);
+    }
+    ast.size = ast.size + pad(ast.size, ast.align);
+    
+    for (let i = 0, c = ast.fields.length - 1; i < c; i++) {
+      ast.fields[i].space = align(ast.fields[i + 1].type);
+    }
+    ast.fields[ast.fields.length - 1].space = ast.align;
+  }
   else if (ast.tag.match(/Type$/)) {
+  }
+  
+  
+  else if (ast.tag === "Primitive") {
   }
   
   
@@ -41,10 +90,13 @@ function AnalyzeDeclarationInfo(ast) {
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    AnalyzeDeclarationInfo(ast.body);
+    ast.return.ref = false;
+    ast.type       = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return, ref: false };
     
     if (ast.body != null) ast.kind = "GlobalFunction";
     else                  ast.kind = "ExternalFunction";
+    
+    AnalyzeDeclarationInfo(ast.body);
   }
   
   
@@ -155,12 +207,8 @@ function AnalyzeDeclarationInfo(ast) {
   else if (ast.tag === "SetExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
-  else if (ast.tag === "LookupPropertyExpression") {
+  else if (ast.tag === "FieldExpression") {
     AnalyzeDeclarationInfo(ast.subject);
-  }
-  else if (ast.tag === "SetPropertyExpression") {
-    AnalyzeDeclarationInfo(ast.subject);
-    AnalyzeDeclarationInfo(ast.argument);
   }
   else if (ast.tag === "CallExpression") {
     AnalyzeDeclarationInfo(ast.subject);

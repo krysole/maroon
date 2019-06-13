@@ -79,6 +79,10 @@ function AnalyzeStructLayout(ast, path) {
   }
   
   
+  else if (ast.tag === "Primitive") {
+  }
+  
+  
   else if (ast.tag === "VariableDeclaration") {
   }
   
