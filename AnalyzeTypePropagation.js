@@ -182,7 +182,7 @@ function AnalyzeTypePropagation(ast) {
     if (ast.arguments.length < ast.subject.type.parameters.length) {
       throw new Error(`Cannot call function with too few arguments.`);
     }
-    if (ast.arguments.length > ast.subject.type.parameters.length && !ast.subject.type.vaparameter) {
+    if (ast.arguments.length > ast.subject.type.parameters.length && !ast.subject.type.vaparam) {
       throw new Error(`Cannot call function without varargs with varargs.`);
     }
     if (ast.arguments.length > 0 && ast.arguments[0].tag === "Keyval") {

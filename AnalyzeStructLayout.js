@@ -30,9 +30,7 @@ function align(type) {
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
-  else if (type.tag === "HaltType")     throw new Error("HaltType does not have data alignment.");
-  else if (type.tag === "VoidType")     throw new Error("VoidType does not have data alignment.");
-  else                                  throw new Error("Invalid type.");
+  else                                  throw new Error(`Invalid field type ${type.tag}.`);
 }
 
 function sizeof(type) {
@@ -41,9 +39,7 @@ function sizeof(type) {
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
   else if (type.tag === "BooleanType")  return 1;
-  else if (type.tag === "HaltType")     throw new Error("HaltType does not have data size.");
-  else if (type.tag === "VoidType")     throw new Error("VoidType does not have data size.");
-  else                                  throw new Error("Invalid type.");
+  else                                  throw new Error(`Invalid field type ${type.tag}.`);
 }
 
 
@@ -75,7 +71,7 @@ function AnalyzeStructLayout(ast, path) {
     ast.size = ast.size + pad(ast.size, ast.align);
     
     for (let i = 0, c = ast.fields.length - 1; i < c; i++) {
-      ast.fields[i].space = align(ast.fields[i + 1]);
+      ast.fields[i].space = align(ast.fields[i + 1].type);
     }
     ast.fields[ast.fields.length - 1].space = ast.align;
   }

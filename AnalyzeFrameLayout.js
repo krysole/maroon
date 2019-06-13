@@ -86,11 +86,6 @@ function AnalyzeFrameLayout(ast, context) {
     // rsp : parameter window
     
     
-    ast.rbxoffset   = context.loffset + 8; // rbx space
-    context.loffset = ast.rbx;
-    context.lsize   = Math.max(context.lsize, context.loffset);
-    
-    
     for (let i = 0, c = ast.parameters.length; i < c; i++) {
       let parameter = ast.parameters[i];
       if (i < 6) {
@@ -138,7 +133,19 @@ function AnalyzeFrameLayout(ast, context) {
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
       if (variable.value != null) {
-        AnalyzeFrameLayout(variable.value, context);
+        let locationType = { tag: "PointerType", target: null };
+        
+        preservedloffset = context.loffset;
+        {
+          if (variable.type.tag === "StructType") {
+            // We need to provide an address temporary for the struct location.
+            variable.addroffset = context.loffset + pad(context.loffset, align(locationType)) + sizeof(locationType);
+            context.loffset     = variable.addroffset;
+            context.lsize       = Math.max(context.lsize, context.loffset);
+          }
+          AnalyzeFrameLayout(variable.value, context);
+        }
+        context.loffset = preservedloffset;
       }
     }
   }
@@ -350,7 +357,7 @@ function AnalyzeFrameLayout(ast, context) {
     {
       AnalyzeFrameLayout(ast.location, context);
       ast.addroffset  = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-      context.loffset = ast.loffset;
+      context.loffset = ast.addroffset;
       context.lsize   = Math.max(context.lsize, context.loffset);
       AnalyzeFrameLayout(ast.value, context);
     }

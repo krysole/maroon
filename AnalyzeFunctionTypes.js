@@ -38,7 +38,7 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "FunctionDeclaration") {
     ast.return.ref = false;
     
-    ast.type = { tag: "FunctionType", parameters: ast.parameters, return: ast.return, ref: false };
+    ast.type = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return, ref: false };
   }
   
   

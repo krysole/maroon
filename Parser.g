@@ -45,10 +45,10 @@ grammar Parser {
     ;
   
   functionDeclaration
-    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparameter:va p("]") type:r block:b
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparameter: va, return: r, body: b }
-    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparameter:va p("]") type:r p(";")
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparameter: va, return: r, body: null }
+    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") type:r block:b
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, return: r, body: b }
+    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") type:r p(";")
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, return: r, body: null }
     ;
   
   
@@ -304,7 +304,7 @@ grammar Parser {
     = type:t local:n
       !{ tag: "Parameter", name: n, type: t }
     ;
-  vaparameter
+  vaparam
     = p(",") p("...") !true
     |                 !false
     ;

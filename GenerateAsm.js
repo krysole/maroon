@@ -58,88 +58,88 @@ function affix(w) {
 
 function reg(w, r) {
   if (w === 8) {
-    if (r === "rax") return   "al";
-    if (r === "rbx") return   "bl";
-    if (r === "rcx") return   "cl";
-    if (r === "rdx") return   "dl";
+    if (r === "rax") return   "%al";
+    if (r === "rbx") return   "%bl";
+    if (r === "rcx") return   "%cl";
+    if (r === "rdx") return   "%dl";
     
-    if (r === "rdi") return  "dil";
-    if (r === "rsi") return  "sil";
-    if (r === "rbp") return  "bpl";
-    if (r === "rsp") return  "spl";
+    if (r === "rdi") return  "%dil";
+    if (r === "rsi") return  "%sil";
+    if (r === "rbp") return  "%bpl";
+    if (r === "rsp") return  "%spl";
     
-    if (r ===  "r8") return  "r8b";
-    if (r ===  "r9") return  "r9b";
-    if (r === "r10") return "r10b";
-    if (r === "r11") return "r11b";
+    if (r ===  "r8") return  "%r8b";
+    if (r ===  "r9") return  "%r9b";
+    if (r === "r10") return "%r10b";
+    if (r === "r11") return "%r11b";
     
-    if (r === "r12") return "r12b";
-    if (r === "r13") return "r13b";
-    if (r === "r14") return "r14b";
-    if (r === "r15") return "r15b";
+    if (r === "r12") return "%r12b";
+    if (r === "r13") return "%r13b";
+    if (r === "r14") return "%r14b";
+    if (r === "r15") return "%r15b";
   }
   else if (w === 16) {
-    if (r === "rax") return   "ax";
-    if (r === "rbx") return   "bx";
-    if (r === "rcx") return   "cx";
-    if (r === "rdx") return   "dx";
+    if (r === "rax") return   "%ax";
+    if (r === "rbx") return   "%bx";
+    if (r === "rcx") return   "%cx";
+    if (r === "rdx") return   "%dx";
     
-    if (r === "rdi") return   "di";
-    if (r === "rsi") return   "si";
-    if (r === "rbp") return   "bp";
-    if (r === "rsp") return   "sp";
+    if (r === "rdi") return   "%di";
+    if (r === "rsi") return   "%si";
+    if (r === "rbp") return   "%bp";
+    if (r === "rsp") return   "%sp";
     
-    if (r ===  "r8") return  "r8w";
-    if (r ===  "r9") return  "r9w";
-    if (r === "r10") return "r10w";
-    if (r === "r11") return "r11w";
+    if (r ===  "r8") return  "%r8w";
+    if (r ===  "r9") return  "%r9w";
+    if (r === "r10") return "%r10w";
+    if (r === "r11") return "%r11w";
     
-    if (r === "r12") return "r12w";
-    if (r === "r13") return "r13w";
-    if (r === "r14") return "r14w";
-    if (r === "r15") return "r15w";
+    if (r === "r12") return "%r12w";
+    if (r === "r13") return "%r13w";
+    if (r === "r14") return "%r14w";
+    if (r === "r15") return "%r15w";
   }
   else if (w === 32) {
-    if (r === "rax") return  "eax";
-    if (r === "rbx") return  "ebx";
-    if (r === "rcx") return  "ecx";
-    if (r === "rdx") return  "edx";
+    if (r === "rax") return  "%eax";
+    if (r === "rbx") return  "%ebx";
+    if (r === "rcx") return  "%ecx";
+    if (r === "rdx") return  "%edx";
     
-    if (r === "rdi") return  "edi";
-    if (r === "rsi") return  "esi";
-    if (r === "rbp") return  "ebp";
-    if (r === "rsp") return  "esp";
+    if (r === "rdi") return  "%edi";
+    if (r === "rsi") return  "%esi";
+    if (r === "rbp") return  "%ebp";
+    if (r === "rsp") return  "%esp";
     
-    if (r ===  "r8") return  "r8d";
-    if (r ===  "r9") return  "r9d";
-    if (r === "r10") return "r10d";
-    if (r === "r11") return "r11d";
+    if (r ===  "r8") return  "%r8d";
+    if (r ===  "r9") return  "%r9d";
+    if (r === "r10") return "%r10d";
+    if (r === "r11") return "%r11d";
     
-    if (r === "r12") return "r12d";
-    if (r === "r13") return "r13d";
-    if (r === "r14") return "r14d";
-    if (r === "r15") return "r15d";
+    if (r === "r12") return "%r12d";
+    if (r === "r13") return "%r13d";
+    if (r === "r14") return "%r14d";
+    if (r === "r15") return "%r15d";
   }
   else if (w === 64) {
-    if (r === "rax") return  "rax";
-    if (r === "rbx") return  "rbx";
-    if (r === "rcx") return  "rcx";
-    if (r === "rdx") return  "rdx";
+    if (r === "rax") return  "%rax";
+    if (r === "rbx") return  "%rbx";
+    if (r === "rcx") return  "%rcx";
+    if (r === "rdx") return  "%rdx";
     
-    if (r === "rdi") return  "rdi";
-    if (r === "rsi") return  "rsi";
-    if (r === "rbp") return  "rbp";
-    if (r === "rsp") return  "rsp";
+    if (r === "rdi") return  "%rdi";
+    if (r === "rsi") return  "%rsi";
+    if (r === "rbp") return  "%rbp";
+    if (r === "rsp") return  "%rsp";
     
-    if (r ===  "r8") return   "r8";
-    if (r ===  "r9") return   "r9";
-    if (r === "r10") return  "r10";
-    if (r === "r11") return  "r11";
+    if (r ===  "r8") return   "%r8";
+    if (r ===  "r9") return   "%r9";
+    if (r === "r10") return  "%r10";
+    if (r === "r11") return  "%r11";
     
-    if (r === "r12") return  "r12";
-    if (r === "r13") return  "r13";
-    if (r === "r14") return  "r14";
-    if (r === "r15") return  "r15";
+    if (r === "r12") return  "%r12";
+    if (r === "r13") return  "%r13";
+    if (r === "r14") return  "%r14";
+    if (r === "r15") return  "%r15";
   }
   else {
     throw new Error();
@@ -292,7 +292,6 @@ function GenerateAsm(ast, context) {
       context.asm += `  movq  %rsp, %rbp\n`;
       context.asm += `  subq  $${ast.fsize}, %rsp\n`;
       context.asm += `  .cfi_def_cfa_register %rbp\n`;
-      context.asm += `  movq  %rbx, -${ast.rbxoffset}(%rbp)\n`;
       if (ast.parameters.length >= 1) context.asm += `  movq  %rdi, -${ast.parameters[0].loffset}(%rbp)`;
       if (ast.parameters.length >= 2) context.asm += `  movq  %rsi, -${ast.parameters[1].loffset}(%rbp)`;
       if (ast.parameters.length >= 3) context.asm += `  movq  %rdx, -${ast.parameters[2].loffset}(%rbp)`;
@@ -302,7 +301,6 @@ function GenerateAsm(ast, context) {
       context.asm += `LABEL__${ast.name}__${context.label++}:\n`;
       GenerateAsm(ast.body, context);
       context.asm += `LABEL__${ast.name}__EPILOGUE:\n`;
-      context.asm += `  movq  -${ast.rbxoffset}(%rbp), %rbx\n`;
       context.asm += `  addq  $${ast.fsize}, %rsp\n`;
       context.asm += `  popq  %rbp\n`;
       context.asm += `  retq\n`;
@@ -324,54 +322,39 @@ function GenerateAsm(ast, context) {
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
       if (variable.value != null) {
-        if (variable.value.type === "StructType") {
-          variable.value.boffset = variable.loffset;
+        if (variable.type.tag === "StructType") {
+          variable.value.boffset = variable.addroffset;
           variable.value.soffset = 0;
           
-          context.asm += `  movq %rax, -${variable.loffset}(%rbp)\n`;
+          context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
           GenerateAsm(ast.value, context);
         }
-        else if (ast.value.type === "FunctionType") {
-          GenerateAsm(ast.location, context);
-          context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
-          GenerateAsm(ast.value, context);
-          context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-          context.asm += `  movq -${ast.value.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq %rax, (%rdx)\n`;
-          context.asm += `  movq %rax, -${ast.loffset}(%rbp)\n`;
+        else if (variable.type.tag === "FunctionType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
         }
-        else if (ast.value.type === "PointerType") {
-          GenerateAsm(ast.location, context);
-          context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
-          GenerateAsm(ast.value, context);
-          context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-          context.asm += `  movq -${ast.value.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq %rax, (%rdx)\n`;
-          context.asm += `  movq %rax, -${ast.loffset}(%rbp)\n`;
+        else if (variable.type.tag === "PointerType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
         }
-        else if (ast.value.type === "IntegerType") {
-          let x = affix(width(ast.type));
-          let a = reg(width(ast.type), "rax");
+        else if (variable.type.tag === "IntegerType") {
+          let x = affix(width(variable.type));
+          let a = reg(width(variable.type), "rax");
           
-          GenerateAsm(ast.location, context);
-          context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
-          GenerateAsm(ast.value, context);
-          context.asm += `  movq -${ast.addroffset}(%rbp), %rdx\n`;
-          context.asm += `  mov${x} -${ast.value.loffset}(%rbp), ${a}\n`;
-          context.asm += `  mov${x} ${a}, (%rdx)\n`;
-          context.asm += `  mov${x} ${a}, -${ast.loffset}(%rbp)\n`;
+          GenerateAsm(variable.value, context);
+          context.asm += `  mov${x}  -${variable.value.loffset}(%rbp), ${a}\n`;
+          context.asm += `  mov${x}  ${a}, -${variable.loffset}(%rbp)\n`;
         }
-        else if (ast.value.type === "BooleanType") {
-          GenerateAsm(ast.location, context);
-          context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
-          GenerateAsm(ast.value, context);
-          context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-          context.asm += `  movb -${ast.value.loffset}(%rbp), %al\n`;
-          context.asm += `  movb %al, (%rdx)\n`;
-          context.asm += `  movb %al, -${ast.loffset}(%rbp)\n`;
+        else if (variable.type.tag === "BooleanType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movb  -${variable.value.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  %al, -${variable.loffset}(%rbp)\n`;
         }
         else {
-          throw new Error(`Invalid field type ${f.type.tag}.`);
+          throw new Error(`Invalid field type ${variable.type.tag}.`);
         }
       }
     }
@@ -563,8 +546,8 @@ function GenerateAsm(ast, context) {
       GenerateAsm(ast.a, context);
       GenerateAsm(ast.b, context);
       context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq  -${ast.b.loffset}(%rbp), %rbx\n`;
-      context.asm += `  cmpq  %rbx, %rax\n`;
+      context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdx\n`;
+      context.asm += `  cmpq  %rdx, %rax\n`;
       context.asm += `  ${jmp(ast.o, false)}   LABEL__${context.fn.name}__${ast.thenLabel}\n`;
       context.asm += `  jmp   LABEL__${context.fn.name}__${ast.elseLabel}\n`;
     }
@@ -572,15 +555,15 @@ function GenerateAsm(ast, context) {
       GenerateAsm(ast.a, context);
       GenerateAsm(ast.b, context);
       context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq  -${ast.b.loffset}(%rbp), %rbx\n`;
-      context.asm += `  cmpq  %rbx, %rax\n`;
+      context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdx\n`;
+      context.asm += `  cmpq  %rdx, %rax\n`;
       context.asm += `  ${jmp(ast.o, false)}   LABEL__${context.fn.name}__${ast.thenLabel}\n`;
       context.asm += `  jmp   LABEL__${context.fn.name}__${ast.elseLabel}\n`;
     }
     else if (ast.a.type.tag === "IntegerType") {
       let x = affix(width(ast.a.type));
       let a = reg(width(ast.a.type), "rax");
-      let b = reg(width(ast.a.type), "rbx");
+      let b = reg(width(ast.a.type), "rdx");
       
       GenerateAsm(ast.a, context);
       GenerateAsm(ast.b, context);
@@ -673,7 +656,8 @@ function GenerateAsm(ast, context) {
       let w = widthOf(ast.type);
       let x = affix(width(ast.type));
       let a = reg(width(ast.type), "rax");
-      let b = reg(width(ast.type), "rbx");
+      let b = reg(width(ast.type), "rdx");
+      let q = reg(width(ast.type), "rax");
       let r = reg(width(ast.type), "rdx");
       let i = (ast.signed ? "i" : "");
       
@@ -829,52 +813,52 @@ function GenerateAsm(ast, context) {
     }
   }
   else if (ast.tag === "SetExpression") {
-    if (ast.value.type === "StructType") {
-      ast.value.boffset = ast.addroffset;
-      ast.value.soffset = 0;
+    if (ast.type.tag === "StructType") {
+      ast.value.addroffset = ast.addroffset;
+      ast.value.soffset    = 0;
       
       GenerateAsm(ast.location, context);
       context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
     }
-    else if (ast.value.type === "FunctionType") {
+    else if (ast.type.tag === "FunctionType") {
       GenerateAsm(ast.location, context);
-      context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
+      context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
-      context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-      context.asm += `  movq -${ast.value.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq %rax, (%rdx)\n`;
-      context.asm += `  movq %rax, -${ast.loffset}(%rbp)\n`;
+      context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+      context.asm += `  movq  -${ast.value.loffset}(%rbp), %rax\n`;
+      context.asm += `  movq  %rax, (%rdx)\n`;
+      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
     }
-    else if (ast.value.type === "PointerType") {
+    else if (ast.type.tag === "PointerType") {
       GenerateAsm(ast.location, context);
-      context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
+      context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
-      context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-      context.asm += `  movq -${ast.value.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq %rax, (%rdx)\n`;
-      context.asm += `  movq %rax, -${ast.loffset}(%rbp)\n`;
+      context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+      context.asm += `  movq  -${ast.value.loffset}(%rbp), %rax\n`;
+      context.asm += `  movq  %rax, (%rdx)\n`;
+      context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
     }
-    else if (ast.value.type === "IntegerType") {
+    else if (ast.type.tag === "IntegerType") {
       let x = affix(width(ast.type));
       let a = reg(width(ast.type), "rax");
       
       GenerateAsm(ast.location, context);
       context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
-      context.asm += `  movq -${ast.addroffset}(%rbp), %rdx\n`;
-      context.asm += `  mov${x} -${ast.value.loffset}(%rbp), ${a}\n`;
-      context.asm += `  mov${x} ${a}, (%rdx)\n`;
-      context.asm += `  mov${x} ${a}, -${ast.loffset}(%rbp)\n`;
+      context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+      context.asm += `  mov${x}  -${ast.value.loffset}(%rbp), ${a}\n`;
+      context.asm += `  mov${x}  ${a}, (%rdx)\n`;
+      context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
     }
-    else if (ast.value.type === "BooleanType") {
+    else if (ast.type.tag === "BooleanType") {
       GenerateAsm(ast.location, context);
-      context.asm += `  movq %rax, -${ast.addroffset}(%rbp)\n`;
+      context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
-      context.asm += `  movq -${ast.addroffset}(%rbx), %rdx\n`;
-      context.asm += `  movb -${ast.value.loffset}(%rbp), %al\n`;
-      context.asm += `  movb %al, (%rdx)\n`;
-      context.asm += `  movb %al, -${ast.loffset}(%rbp)\n`;
+      context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+      context.asm += `  movb  -${ast.value.loffset}(%rbp), %al\n`;
+      context.asm += `  movb  %al, (%rdx)\n`;
+      context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
     }
     else {
       throw new Error(`Invalid field type ${f.type.tag}.`);
@@ -968,35 +952,48 @@ function GenerateAsm(ast, context) {
     }
   }
   else if (ast.tag === "InitStructExpression") {
-    if (ast.soffset == null) throw new Error(`Cannot construct temporary struct values.`);
+    if (ast.addroffset == null || ast.soffset == null) {
+      throw new Error(`Cannot construct temporary struct values.`);
+    }
+    
     
     // Note: All of the following clears the alignment padding space to zero.
     
     function genClearField(ast, f) {
       if (f.type === "StructType") {
-        GenerateAsm({ tag: "InitStructExpression", subject: f.type, arguments: [], soffset: ast.soffset + f.offset }, context);
+        GenerateAsm({
+          tag: "InitStructExpression",
+          subject: f.type,
+          arguments: [],
+          addroffset: ast.addroffset,
+          soffset: ast.soffset + f.offset
+        }, context);
       }
       else if (f.type === "FunctionType") {
         context.asm += `  xorq  %rax, %rax\n`;
-        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rbx)\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "PointerType") {
         context.asm += `  xorq  %rax, %rax\n`;
-        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rbx)\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "IntegerType") {
         let x = affix(f.space * 8);
         let a = reg(f.space * 8, "rax");
         
         context.asm += `  xor${x}  ${a}, ${a}\n`;
-        context.asm += `  mov${x}  ${a}, ${ast.soffset + f.offset}(%rbx)\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  mov${x}  ${a}, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "BooleanType") {
         let x = affix(f.space * 8);
         let a = reg(f.space * 8, "rax");
         
         context.asm += `  xor${x}  ${a}, ${a}\n`;
-        context.asm += `  mov${x}  ${a}, ${ast.soffset + f.offset}(%rbx)\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  mov${x}  ${a}, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else {
         throw new Error(`Unsupported struct field type ${f.type.tag}.`);
@@ -1005,22 +1002,22 @@ function GenerateAsm(ast, context) {
     
     function genAssignField(ast, f, a) {
       if (f.type === "StructType") {
-        a.boffset = ast.boffset;
-        a.soffset = ast.soffset + f.offset;
+        a.addroffset = ast.addroffset;
+        a.soffset    = ast.soffset + f.offset;
         
         GenerateAsm(a, context);
       }
       else if (f.type === "FunctionType") {
         GenerateAsm(a, context);
-        context.asm += `  movq -${a.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq -${ast.boffset}(%rbx), %rdx\n`;
-        context.asm += `  movq %rax, ${ast.soffset + f.offset}(%rdx)\n`;
+        context.asm += `  movq  -${a.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "PointerType") {
         GenerateAsm(a, context);
-        context.asm += `  movq -${a.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq -${ast.boffset}(%rbx), %rdx\n`;
-        context.asm += `  movq %rax, ${ast.soffset + f.offset}(%rdx)\n`;
+        context.asm += `  movq  -${a.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
+        context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "IntegerType") {
         let s  = (a.type.signed ? "s" : "z");
@@ -1032,14 +1029,14 @@ function GenerateAsm(ast, context) {
         GenerateAsm(a, context);
         context.asm += `  mov${xa}  -${a.loffset}(%rbp), ${aa}\n`;
         context.asm += `  mov${s}${xa}${xf} ${aa}, ${af}\n`;
-        context.asm += `  movq -${ast.boffset}(%rbx), %rdx\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  mov${xf}  ${af}, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else if (f.type === "BooleanType") {
         GenerateAsm(a, context);
         context.asm += `  movb  -${f.loffset}(%rbp), %al\n`;
         context.asm += `  movzbq %al, %rax\n`;
-        context.asm += `  movq -${ast.boffset}(%rbx), %rdx\n`;
+        context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  movq  %rax, ${ast.soffset + f.offset}(%rdx)\n`;
       }
       else {
@@ -1070,19 +1067,6 @@ function GenerateAsm(ast, context) {
       }
     }
   }
-  
-  
-  //
-  // Todo
-  //
-  // It appears that I may eventually have stuff like the following to
-  // deal with, which would necessitate preserving rbx in each instance.
-  //
-  // my_fn({ field_a: another_fn({ field_a: 0 })})
-  //
-  // Respectively, all other uses of rbx can be changed to rdx to avoid
-  // needing to push rbx otherwise during function startup...
-  //
   
   
   else if (ast.tag === "IntegerLiteral") {
