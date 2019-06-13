@@ -183,7 +183,7 @@ grammar Parser {
     ;
   
   setExpression
-    = typecastExpression:l p("<-") assignmentExpression:e
+    = typecastExpression:l p("<-") setExpression:e
       !{ tag: "SetExpression", location: l, value: e }
     | typecastExpression
     ;

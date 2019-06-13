@@ -21,8 +21,10 @@ fn main[] halts {
   
   let p <- addr[a];
   
+  a.c <- 42;
+  
   printf["Lets print a big number, %u.\n", 0xffff_ffff_ffff_ffff as u64];
-  printf["The meaning of everything is %d!\n", ref[p].a];
+  printf["The meaning of everything is %d!\n", ref[p].c];
   
   exit[0];
 }

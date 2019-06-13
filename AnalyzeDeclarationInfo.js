@@ -90,8 +90,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    ast.return.ref = false;
-    ast.type       = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return, ref: false };
+    ast.type = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return };
     
     if (ast.body != null) ast.kind = "GlobalFunction";
     else                  ast.kind = "ExternalFunction";

@@ -26,15 +26,15 @@ let InstallPlatform = module.exports = {
     Symtab.define(symtab, "halts", { tag: "HaltType" });
     Symtab.define(symtab, "void",  { tag: "VoidType" });
     
-    Symtab.define(symtab, "i8",  { tag: "IntegerType", width:  8, signed: true, ref: false });
-    Symtab.define(symtab, "i16", { tag: "IntegerType", width: 16, signed: true, ref: false });
-    Symtab.define(symtab, "i32", { tag: "IntegerType", width: 32, signed: true, ref: false });
-    Symtab.define(symtab, "i64", { tag: "IntegerType", width: 64, signed: true, ref: false });
+    Symtab.define(symtab, "i8",  { tag: "IntegerType", width:  8, signed: true });
+    Symtab.define(symtab, "i16", { tag: "IntegerType", width: 16, signed: true });
+    Symtab.define(symtab, "i32", { tag: "IntegerType", width: 32, signed: true });
+    Symtab.define(symtab, "i64", { tag: "IntegerType", width: 64, signed: true });
     
-    Symtab.define(symtab, "u8",  { tag: "IntegerType", width:  8, signed: false, ref: false });
-    Symtab.define(symtab, "u16", { tag: "IntegerType", width: 16, signed: false, ref: false });
-    Symtab.define(symtab, "u32", { tag: "IntegerType", width: 32, signed: false, ref: false });
-    Symtab.define(symtab, "u64", { tag: "IntegerType", width: 64, signed: false, ref: false });
+    Symtab.define(symtab, "u8",  { tag: "IntegerType", width:  8, signed: false });
+    Symtab.define(symtab, "u16", { tag: "IntegerType", width: 16, signed: false });
+    Symtab.define(symtab, "u32", { tag: "IntegerType", width: 32, signed: false });
+    Symtab.define(symtab, "u64", { tag: "IntegerType", width: 64, signed: false });
     
     
     Symtab.define(symtab, "ref",  { tag: "Primitive", name: "ref" });

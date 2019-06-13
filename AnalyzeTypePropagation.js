@@ -175,7 +175,7 @@ function AnalyzeTypePropagation(ast) {
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
-    ast.a.type = unify(ast.type, ast.a.type);
+    ast.value.type = unify(ast.type, ast.value.type);
     
     AnalyzeTypePropagation(ast.a);
   }

@@ -42,8 +42,8 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "VariableDeclaration") {
     AnalyzeTypeInferencing(ast.value);
     
-    ast.type     = Object.copy(ast.value.type);
-    ast.type.ref = true;
+    ast.type = ast.value.type;
+    ast.ref  = true;
   }
   
   
@@ -66,8 +66,8 @@ function AnalyzeTypeInferencing(ast) {
       if (variable.value != null) {
         AnalyzeTypeInferencing(variable.value);
         
-        variable.type     = Object.copy(variable.value.type);
-        variable.type.ref = true;
+        variable.type = variable.value.type;
+        variable.ref  = true;
       }
     }
   }
@@ -128,8 +128,6 @@ function AnalyzeTypeInferencing(ast) {
     AnalyzeTypeInferencing(ast.b);
     
     unify(ast.a.type, ast.b.type);
-    
-    ast.type = { tag: "BooleanType", ref: false };
   }
   else if (ast.tag === "ValueCondition") {
     AnalyzeTypeInferencing(ast.value);
@@ -139,10 +137,13 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "ConditionExpression") {
     AnalyzeTypeInferencing(ast.condition);
     
-    ast.type = { tag: "BooleanType", ref: false };
+    ast.type = { tag: "BooleanType" };
+    ast.ref  = false;
   }
   else if (ast.tag === "TypecastExpression") {
     AnalyzeTypeInferencing(ast.argument);
+    
+    ast.ref = false;
     
     if (ast.argument.type.tag === ast.type.tag &&
         ast.argument.type.width === ast.type.width && // if present
@@ -264,34 +265,38 @@ function AnalyzeTypeInferencing(ast) {
     AnalyzeTypeInferencing(ast.alternative);
     
     ast.type = unify(ast.consiquent.type, ast.alternative.type);
+    ast.ref  = (ast.consiquent.ref && ast.alternative.ref);
   }
   else if (ast.tag === "InfixExpression") {
     AnalyzeTypeInferencing(ast.a);
     AnalyzeTypeInferencing(ast.b);
     
     ast.type = unify(ast.a.type, ast.b.type);
+    ast.ref  = false;
   }
   else if (ast.tag === "PrefixExpression") {
     AnalyzeTypeInferencing(ast.a);
     
     ast.type = ast.a.type;
+    ast.ref  = false;
   }
   else if (ast.tag === "RefExpression") {
     AnalyzeTypeInferencing(ast.a);
     
     if (ast.a.type.tag === "PointerType") {
-      ast.type     = Object.copy(ast.a.type.target);
-      ast.type.ref = true;
+      ast.type = ast.a.type.target;
+      ast.ref  = true;
     }
     else {
-      throw new Error(ast.tag);
+      throw new Error(`Cannot reference non pointer type.`);
     }
   }
   else if (ast.tag === "AddrExpression") {
     AnalyzeTypeInferencing(ast.location);
     
-    if (ast.location.type.ref) {
-      ast.type = { tag: "PointerType", target: ast.location.type, ref: false };
+    if (ast.location.ref) {
+      ast.type = { tag: "PointerType", target: ast.location.type };
+      ast.ref  = false;
     }
     else {
       throw new Error(`Cannot get address of value, expected reference.`);
@@ -300,6 +305,7 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "LookupExpression") {
     if (ast.declaration.type != null) {
       ast.type = ast.declaration.type;
+      ast.ref  = true;
     }
     else {
       throw new Error(`Invalid LookupExpression location ${ast.declaration.tag}.`);
@@ -310,10 +316,11 @@ function AnalyzeTypeInferencing(ast) {
     AnalyzeTypeInferencing(ast.value);
     
     
-    if (ast.location.type.ref) {
+    if (ast.location.ref) {
       unify(ast.location.type, ast.value.type);
       
       ast.type = ast.location.type;
+      ast.ref  = false;
     }
     else {
       throw new Error("Cannot assign to a value, expected reference.")
@@ -331,9 +338,9 @@ function AnalyzeTypeInferencing(ast) {
     }
     
     if (field != null) {
-      ast.field    = field;
-      ast.type     = Object.copy(field.type);
-      ast.type.ref = ast.subject.type.ref;
+      ast.field = field;
+      ast.type  = field.type;
+      ast.ref   = ast.subject.ref;
     }
     else {
       throw new Error(`Field does not exist on struct type ${ast.subject.type.name}.`);
@@ -345,40 +352,34 @@ function AnalyzeTypeInferencing(ast) {
       AnalyzeTypeInferencing(argument);
     }
     
-    ast.type     = Object.copy(ast.subject.type.return);
-    ast.type.ref = ast.type.ref;
+    ast.type = ast.subject.type.return;
+    ast.ref  = false;
   }
   else if (ast.tag === "InitStructExpression") {
     for (let a of ast.arguments) {
       if (a.tag === "Keyval") AnalyzeTypeInferencing(a.v);
       else                    AnalyzeTypeInferencing(a);
     }
+    
+    ast.ref = false;
   }
   
   
   else if (ast.tag === "IntegerLiteral") {
-    if (ast.type == null) {
-      ast.type = { tag: "IntegerType", width: null, signed: (ast.value.isNegative() ? true : null), ref: false };
-    }
+    if (ast.type == null) ast.type = { tag: "IntegerType", width: null, signed: (ast.value.isNegative() ? true : null) };
+    ast.ref = false;
   }
   else if (ast.tag === "StringLiteral") {
-    if (ast.type == null) {
-      ast.type = { tag: "PointerType", target: { tag: "IntegerType", width: 8, signed: true, ref: false }, ref: false };
-    }
+    if (ast.type == null) ast.type = { tag: "PointerType", target: { tag: "IntegerType", width: 8, signed: true } };
+    ast.ref = false;
   }
   else if (ast.tag === "BooleanLiteral") {
-    if (ast.type == null) {
-      ast.type = { tag: "BooleanType", ref: false };
-    }
+    if (ast.type == null) ast.type = { tag: "BooleanType" };
+    ast.ref = false;
   }
   else if (ast.tag === "NullLiteral") {
-    if (ast.type == null) {
-      ast.type = { tag: "PointerType", target: null, ref: false };
-    }
-  }
-  
-  
-  else if (ast.tag === "Initializer") {
+    if (ast.type == null) ast.type = { tag: "PointerType", target: null };
+    ast.ref = false;
   }
   
   

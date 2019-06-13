@@ -41,7 +41,7 @@ function unify(a, b) {
     return a;
   }
   else if (a.tag === "IntegerType" && b.tag === "IntegerType") {
-    let result = { tag: "IntegerType", width: null, signed: null, ref: null };
+    let result = { tag: "IntegerType", width: null, signed: null };
     
     if      (a.width === b.width)                  result.width = a.width;
     else if (a.width != null && b.width == null)   result.width = a.width;
@@ -51,14 +51,10 @@ function unify(a, b) {
     else if (a.signed != null && b.signed == null) result.signed = a.signed;
     else if (a.signed == null && b.signed != null) result.signed = b.signed;
     else                                           throw new Error("Incompatible integer type signedness.");
-    if      (a.ref === b.ref)                      result.ref = a.ref;
-    else                                           throw new Error("Incompatible integer type ref flag.");
     
     return result;
   }
   else if (a.tag === "BooleanType" && b.tag === "BooleanType") {
-    if (a.ref !== b.ref) throw new Error("Incompatible boolean type ref flag.");
-
     return a;
   }
   else if (a.tag === "HaltType" && b.tag === "HaltType") {

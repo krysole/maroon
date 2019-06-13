@@ -157,7 +157,7 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "AddrExpression") {
     AnalyzeAddrReferences(ast.location);
     
-    if (ast.location.type.ref) {
+    if (ast.location.ref) {
       ast.location.addr = true;
     }
     else {
@@ -170,7 +170,7 @@ function AnalyzeAddrReferences(ast) {
     AnalyzeAddrReferences(ast.location);
     AnalyzeAddrReferences(ast.value);
     
-    if (ast.location.type.ref) {
+    if (ast.location.ref) {
       ast.location.addr = true;
     }
     else {
@@ -180,12 +180,11 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "FieldExpression") {
     AnalyzeAddrReferences(ast.subject);
     
-    if (ast.subject.type.ref) {
-      ast.subject.addr = true;
-    }
-    else {
-      throw new Error(`Expected struct reference for FieldExpression.`);
-    }
+    // Note: We don't actually need the subject to be a reference, since a
+    //       struct always has an address, just not an assignable address, and
+    //       we've already checked for that during type analysis.
+    
+    ast.subject.addr = true;
   }
   else if (ast.tag === "CallExpression") {
     AnalyzeAddrReferences(ast.subject);
