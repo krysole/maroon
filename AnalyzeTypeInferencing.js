@@ -356,9 +356,17 @@ function AnalyzeTypeInferencing(ast) {
     ast.ref  = false;
   }
   else if (ast.tag === "InitStructExpression") {
-    for (let a of ast.arguments) {
-      if (a.tag === "Keyval") AnalyzeTypeInferencing(a.v);
-      else                    AnalyzeTypeInferencing(a);
+    if (ast.arguments.length === 0) {
+    }
+    else if (ast.arguments[0].tag === "Keyval") {
+      for (let kv of ast.arguments) {
+        AnalyzeTypeInferencing(kv.value);
+      }
+    }
+    else {
+      for (let a of ast.arguments) {
+        AnalyzeTypeInferencing(a);
+      }
     }
     
     ast.ref = false;

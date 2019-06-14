@@ -25,7 +25,7 @@ function pad(offset, alignment) {
 }
 
 function align(type) {
-  if      (type.tag === "StructType")   return type.align;
+  if      (type.tag === "StructType")   return (type.orig != null ? type.orig.align : type.align);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -36,7 +36,7 @@ function align(type) {
 }
 
 function sizeof(type) {
-  if      (type.tag === "StructType")   return type.size;
+  if      (type.tag === "StructType")   return (type.orig != null ? type.orig.size : type.size);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -417,7 +417,7 @@ function AnalyzeFrameLayout(ast, context) {
   else if (ast.tag === "InitStructExpression") {
     if (ast.arguments.length === 0) {
     }
-    else if (ast.arguments[i].tag === "Keyval") {
+    else if (ast.arguments[0].tag === "Keyval") {
       for (let argument of ast.arguments) {
         preservedloffset = context.loffset;
         {

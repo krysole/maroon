@@ -177,7 +177,8 @@ function AnalyzeTypePropagation(ast) {
   else if (ast.tag === "SetExpression") {
     ast.value.type = unify(ast.type, ast.value.type);
     
-    AnalyzeTypePropagation(ast.a);
+    AnalyzeTypePropagation(ast.location);
+    AnalyzeTypePropagation(ast.value);
   }
   else if (ast.tag === "FieldExpression") {
     AnalyzeTypePropagation(ast.subject);
@@ -244,14 +245,12 @@ function AnalyzeTypePropagation(ast) {
       let names = [];
       
       for (let kv of ast.arguments) {
-        if (kv.tag !== "Keyval") throw new Error(`Expected all or none of the struct initializers to be keyed.`);
-        
         kv.field = ast.type.fields.find(f => kv.key === f.name);
         
-        if (names.includes(kv.name)) throw new Error(`Field already specified in struct initializer.`);
-        if (kv.field == null)        throw new Error(`Field does not exist in struct ${kv.name}.`);
+        if (kv.field == null) throw new Error(`Field does not exist in struct ${kv.key}.`);
         
-        names.push(kv.name);
+        if (names.includes(kv.key)) throw new Error(`Field already specified in struct initializer.`);
+        else                        names.push(kv.key);
         
         kv.value.type = unify(kv.field.type, kv.value.type);
       }
@@ -278,7 +277,7 @@ function AnalyzeTypePropagation(ast) {
     }
     
     for (let a of ast.arguments) {
-      if (a.tag === "Keyval") AnalyzeTypePropagation(a.v);
+      if (a.tag === "Keyval") AnalyzeTypePropagation(a.value);
       else                    AnalyzeTypePropagation(a);
     }
   }

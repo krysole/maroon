@@ -310,8 +310,8 @@ grammar Parser {
     ;
   
   keyval
-    = id:n expression:v
-      !{ tag: "Keyval", key: n, type: v }
+    = id:n p(":") expression:v
+      !{ tag: "Keyval", key: n, value: v }
     ;
   
   

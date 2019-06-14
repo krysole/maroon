@@ -12,14 +12,17 @@ struct A {
   c: i64;
 }
 
-let a <- A[1, 2, 3];
+-- let a <- A[a: 4, b: 2, c: 8];
 
 fn main[] halts {
   -- if not true and false {
   --   puts["Hello world.\n"];
   -- }
   
+  let a <- A[a: 1, b: 3, c: 9];
   let p <- addr[a];
+  
+  a <- A[];
   
   a.c <- 42;
   

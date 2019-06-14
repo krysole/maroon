@@ -326,8 +326,23 @@ function Simplify(ast, context) {
     }
   }
   else if (ast.tag === "InitStructExpression") {
-    for (let argument of ast.arguments) {
-      Simplify(argument, context);
+    Simplify(ast.type, context);
+    
+    if (ast.arguments.length === 0) {
+    }
+    else if (ast.arguments[0].tag === "Keyval") {
+      for (let kv of ast.arguments) {
+        if (kv.tag !== "Keyval") throw new Error("All arguments must be either keyvals or regular arguments.");
+        
+        Simplify(kv.value, context);
+      }
+    }
+    else {
+      for (let a of ast.arguments) {
+        if (a.tag === "Keyval") throw new Error("All arguments must be either keyvals or regular arguments.");
+        
+        Simplify(a, context);
+      }
     }
   }
   
