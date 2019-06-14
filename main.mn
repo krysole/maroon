@@ -7,27 +7,25 @@ fn puts[[i8] string] i32;
 fn exit[i32 exit_code] halts;
 
 struct A {
-  a: i64;
-  b: i64;
-  c: i64;
+  value: i64;
 }
 
--- let a <- A[a: 4, b: 2, c: 8];
+struct B {
+  first:  A;
+  second: A;
+}
 
 fn main[] halts {
-  -- if not true and false {
-  --   puts["Hello world.\n"];
-  -- }
+  -- Todo: Test out the statements and expressions somewhat, once I'm satisfied
+  --       that the data structures are working.
   
-  let a <- A[a: 1, b: 3, c: 9];
-  let p <- addr[a];
+  let s <- B[first: A[value: 20], second: A[3]];
   
-  a <- A[];
+  let p <- addr[s.first];
   
-  a.c <- 42;
+  ref[p].value <- 42;
   
-  printf["Lets print a big number, %u.\n", 0xffff_ffff_ffff_ffff as u64];
-  printf["The meaning of everything is %d!\n", ref[p].c];
+  printf["The meaning of everything is %d!\n", s.first.value];
   
   exit[0];
 }

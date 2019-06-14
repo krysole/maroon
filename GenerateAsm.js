@@ -967,7 +967,7 @@ function GenerateAsm(ast, context) {
       if (f.type.tag === "StructType") {
         GenerateAsm({
           tag: "InitStructExpression",
-          subject: f.type,
+          type: f.type,
           arguments: [],
           addroffset: ast.addroffset,
           soffset: ast.soffset + f.offset

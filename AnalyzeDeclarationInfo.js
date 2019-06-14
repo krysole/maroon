@@ -54,7 +54,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   
   
   else if (ast.tag === "StructType") {
-    if      (path == null)        path = (ast);
+    if      (path == null)        path = [ast];
     else if (!path.includes(ast)) path.push(ast);
     else                          throw new Error(`Struct definition cycle detected: ${path}.`);
     
