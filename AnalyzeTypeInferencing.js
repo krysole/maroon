@@ -152,7 +152,7 @@ function AnalyzeTypeInferencing(ast) {
       
       ast.tag = "NullCast";
     }
-    if (ast.type.tag === "FunctionType") {
+    else if (ast.type.tag === "FunctionType") {
       if (ast.argument.type.tag === "PointerType") {
         // [t] => fn [...] r;
         
@@ -195,7 +195,14 @@ function AnalyzeTypeInferencing(ast) {
       }
     }
     else if (ast.type.tag === "IntegerType") {
-      if (ast.argument.type.tag === "IntegerType" && ast.argument.type.signed === ast.type.signed) {
+      if (ast.argument.type.tag === "IntegerType" && ast.argument.type.width == null) {
+        // type clarification for integers
+        
+        ast.tag                  = "NullCast";
+        ast.argument.type.signed = ast.type.signed;
+        ast.argument.type.width  = ast.type.width;
+      }
+      else if (ast.argument.type.tag === "IntegerType" && ast.argument.type.signed === ast.type.signed) {
         // iXX => iYY
         // uXX => uYY
         

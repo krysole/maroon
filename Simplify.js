@@ -265,12 +265,37 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "PrefixExpression") {
     Simplify(ast.a, context);
+    
+    if (ast.o === "+" && ast.a.tag === "IntegerLiteral") {
+      Object.transmute(ast, ast.a);
+    }
+    else if (ast.o === "-" && ast.a.tag === "IntegerLiteral") {
+      Object.transmute(ast, ast.a);
+      
+      ast.value = ast.value.negated();
+    }
   }
   else if (ast.tag === "RefExpression") {
-    Simplify(ast.a, context);
+    if (ast.a.tag === "PointerType") {
+      Object.transmute(ast, ast.a);
+      
+      Simplify(ast, context);
+    }
+    else if (ast.a.tag.match(/Type/)) {
+      throw new Error(`Cannot simplify ref expression over non pointer type.`);
+    }
+    else {
+      Simplify(ast.a, context);
+    }
   }
   else if (ast.tag === "AddrExpression") {
     Simplify(ast.location, context);
+    
+    if (ast.location.tag.match(/Type/)) {
+      Object.transmute(ast, { tag: "PointerType", target: ast.location });
+      
+      Simplify(ast);
+    }
   }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);

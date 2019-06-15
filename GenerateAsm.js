@@ -658,35 +658,231 @@ function GenerateAsm(ast, context) {
   }
   else if (ast.tag === "InfixExpression") {
     if (ast.type.tag === "IntegerType") {
-      let w = widthOf(ast.type);
       let x = affix(width(ast.type));
       let a = reg(width(ast.type), "rax");
-      let b = reg(width(ast.type), "rdx");
+      let b = reg(width(ast.type), "rdi");
       let q = reg(width(ast.type), "rax");
       let r = reg(width(ast.type), "rdx");
       let i = (ast.signed ? "i" : "");
       
-      GenerateAsm(ast.a, context);
-      GenerateAsm(ast.b, context);
-      if (ast.o === "quot") context.asm += `  xor${x}  ${r}, ${r}\n`;
-      if (ast.o === "rem")  context.asm += `  xor${x}  ${r}, ${r}\n`;
-      context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
-      context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
-      if      (ast.o === "|")    context.asm += `  or${x}   ${b}, ${a}\n`;
-      else if (ast.o === "^")    context.asm += `  xor${x}  ${b}, ${a}\n`;
-      else if (ast.o === "&")    context.asm += `  and${x}  ${b}, ${a}\n`;
-      else if (ast.o === "+")    context.asm += `  add${x}  ${b}, ${a}\n`;
-      else if (ast.o === "-")    context.asm += `  sub${x}  ${b}, ${a}\n`;
-      else if (ast.o === "*")    context.asm += `  ${i}mul${x}  ${b}, ${a}\n`;
-      else if (ast.o === "/")    throw new Error("Cannot divide integers, quot or rem intended?");
-      else if (ast.o === "quot") context.asm += `  ${i}div${x}  ${b}\n`;
-      else if (ast.o === "rem")  context.asm += `  ${i}div${x}  ${b}\n` + `mov${x}  ${r}, ${a}\n`;
-      else if (ast.o === "exp")  throw new Error("exp currently unsupported");
-      else                       throw new Error(`Unrecognized operator ${ast.o}.`);
-      context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      if (ast.o === "|") {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  or${x}   ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "^") {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  xor${x}  ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "&") {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  and${x}  ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "+") {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  add${x}  ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "-") {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  sub${x}  ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "*" && ast.type.signed) {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  imul${x} ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "*" && !ast.type.signed) {
+        GenerateAsm(ast.a, context);
+        GenerateAsm(ast.b, context);
+        context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+        context.asm += `  mul${x}  ${b}, ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.o === "quot" && ast.type.signed) {
+        if (width(ast.type) === 8) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movb  -${ast.a.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  -${ast.b.loffset}(%rbp), %dil\n`;
+          context.asm += `  movsbw %al, %ax\n`;
+          context.asm += `  idivb %dil\n`;
+          context.asm += `  movb  %ah, %dl\n`;
+          context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 16) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movw  -${ast.a.loffset}(%rbp), %ax\n`;
+          context.asm += `  movw  -${ast.b.loffset}(%rbp), %di\n`;
+          context.asm += `  cwd\n`;
+          context.asm += `  idivw %di\n`;
+          context.asm += `  movw  %ax, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 32) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movl  -${ast.a.loffset}(%rbp), %eax\n`;
+          context.asm += `  movl  -${ast.b.loffset}(%rbp), %edi\n`;
+          context.asm += `  cdq\n`;
+          context.asm += `  idivl %edi\n`;
+          context.asm += `  movl  %eax, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 64) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdi\n`;
+          context.asm += `  cqo\n`;
+          context.asm += `  idivq %rdi\n`;
+          context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+        }
+      }
+      else if (ast.o === "quot" && !ast.type.signed) {
+        if (width(ast.type) === 8) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movb  -${ast.a.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  -${ast.b.loffset}(%rbp), %dil\n`;
+          context.asm += `  movzbw %al, %ax\n`;
+          context.asm += `  divb  %dil\n`;
+          context.asm += `  movb  %ah, %dl\n`;
+          context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 16) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movw  -${ast.a.loffset}(%rbp), %ax\n`;
+          context.asm += `  movw  -${ast.b.loffset}(%rbp), %di\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divw  %di\n`;
+          context.asm += `  movw  %ax, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 32) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movl  -${ast.a.loffset}(%rbp), %eax\n`;
+          context.asm += `  movl  -${ast.b.loffset}(%rbp), %edi\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divl  %edi\n`;
+          context.asm += `  movl  %eax, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 64) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdi\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divq  %rdi\n`;
+          context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+        }
+      }
+      else if (ast.o === "rem" && ast.type.signed) {
+        if (width(ast.type) === 8) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movb  -${ast.a.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  -${ast.b.loffset}(%rbp), %dil\n`;
+          context.asm += `  movsbw %al, %ax\n`;
+          context.asm += `  idivb %dil\n`;
+          context.asm += `  movb  %ah, %dl\n`;
+          context.asm += `  movb  %dl, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 16) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movw  -${ast.a.loffset}(%rbp), %ax\n`;
+          context.asm += `  movw  -${ast.b.loffset}(%rbp), %di\n`;
+          context.asm += `  cwd\n`;
+          context.asm += `  idivw %di\n`;
+          context.asm += `  movw  %dx, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 32) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movl  -${ast.a.loffset}(%rbp), %eax\n`;
+          context.asm += `  movl  -${ast.b.loffset}(%rbp), %edi\n`;
+          context.asm += `  cdq\n`;
+          context.asm += `  idivl %edi\n`;
+          context.asm += `  movl  %edx, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 64) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdi\n`;
+          context.asm += `  cqo\n`;
+          context.asm += `  idivq %rdi\n`;
+          context.asm += `  movq  %rdx, -${ast.loffset}(%rbp)\n`;
+        }
+      }
+      else if (ast.o === "rem" && !ast.type.signed) {
+        if (width(ast.type) === 8) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movb  -${ast.a.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  -${ast.b.loffset}(%rbp), %dil\n`;
+          context.asm += `  movzbw %al, %ax\n`;
+          context.asm += `  divb  %dil\n`;
+          context.asm += `  movb  %ah, %dl\n`;
+          context.asm += `  movb  %dl, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 16) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movw  -${ast.a.loffset}(%rbp), %ax\n`;
+          context.asm += `  movw  -${ast.b.loffset}(%rbp), %di\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divw  %di\n`;
+          context.asm += `  movw  %dx, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 32) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movl  -${ast.a.loffset}(%rbp), %eax\n`;
+          context.asm += `  movl  -${ast.b.loffset}(%rbp), %edi\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divl  %edi\n`;
+          context.asm += `  movl  %edx, -${ast.loffset}(%rbp)\n`;
+        }
+        else if (width(ast.type) === 64) {
+          GenerateAsm(ast.a, context);
+          GenerateAsm(ast.b, context);
+          context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  -${ast.b.loffset}(%rbp), %rdi\n`;
+          context.asm += `  xorl  %edx, %edx\n`; // Sets entire register, smallest encoding.
+          context.asm += `  divq  %rdi\n`;
+          context.asm += `  movq  %rdx, -${ast.loffset}(%rbp)\n`;
+        }
+      }
+      else {
+        throw new Error(`Cannot codegen unsupported op ${ast.o} for integers.`);
+      }
     }
     else {
-      throw new Error(`Cannot generate infix operator for type ${ast.type.tag}.`);
+      throw new Error(`Cannot codegen infix op for unsupported type ${ast.type.tag}.`);
     }
   }
   else if (ast.tag === "PrefixExpression") {

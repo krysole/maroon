@@ -19,13 +19,9 @@ fn main[] halts {
   -- Todo: Test out the statements and expressions somewhat, once I'm satisfied
   --       that the data structures are working.
   
-  let s <- B[first: A[value: 20], second: A[3]];
+  let i <- 84 & ~5 as i64;
   
-  let p <- addr[s.first];
-  
-  ref[p].value <- 42;
-  
-  printf["The meaning of everything is %d!\n", s.first.value];
+  printf["The meaning of everything is %d!\n", i];
   
   exit[0];
 }
