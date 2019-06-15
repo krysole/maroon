@@ -4,24 +4,8 @@
 
 fn printf[[i8] string, ...] i32;
 fn puts[[i8] string] i32;
-fn exit[i32 exit_code] halts;
+fn exit[i32 exit_code] halt;
 
-struct A {
-  value: i64;
-}
-
-struct B {
-  first:  A;
-  second: A;
-}
-
-fn main[] halts {
-  -- Todo: Test out the statements and expressions somewhat, once I'm satisfied
-  --       that the data structures are working.
-  
-  let i <- 84 & ~5 as i64;
-  
-  printf["The meaning of everything is %d!\n", i];
-  
+fn main[] halt {
   exit[0];
 }

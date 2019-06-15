@@ -84,14 +84,14 @@ grammar Parser {
   ifStatement
     = id("if") expression:c
       ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | block:f | !null:f )
+      ( id("else") ~p("{") statement:f | id("else") block:f | !null:f )
       !{ tag: "IfStatement", negated: false, condition: c, consiquent: t, alternative: f }
     ;
   
   unlessStatement
     = id("unless") expression:c
       ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | block:f | !null:f )
+      ( id("else") ~p("{") statement:f | id("else") block:f | !null:f )
       !{ tag: "IfStatement", negated: true, condition: c, consiquent: t, alternative: f }
     ;
   
@@ -106,12 +106,12 @@ grammar Parser {
     ;
   
   whileStatement
-    = id("while") condition:c ( id("do") statement:b | block:b )
+    = id("while") expression:c ( id("do") statement:b | block:b )
       !{ tag: "WhileStatement", negated: false, condition: c, body: b }
     ;
   
   untilStatement
-    = id("until") condition:c ( id("do") statement:b | block:b )
+    = id("until") expression:c ( id("do") statement:b | block:b )
       !{ tag: "WhileStatement", negated: true, condition: c, body: b }
     ;
   

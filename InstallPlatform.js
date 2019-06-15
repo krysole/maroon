@@ -23,8 +23,8 @@ let Symtab = require("./Symtab.js");
 let InstallPlatform = module.exports = {
   
   install(symtab) {
-    Symtab.define(symtab, "halts", { tag: "HaltType" });
-    Symtab.define(symtab, "void",  { tag: "VoidType" });
+    Symtab.define(symtab, "halt", { tag: "HaltType" });
+    Symtab.define(symtab, "void", { tag: "VoidType" });
     
     Symtab.define(symtab, "i8",  { tag: "IntegerType", width:  8, signed: true });
     Symtab.define(symtab, "i16", { tag: "IntegerType", width: 16, signed: true });

@@ -322,7 +322,7 @@ function GenerateAsm(ast, context) {
   
   
   else if (ast.tag === "LabelStatement") {
-    context.asm += `LABEL__${context.fn.name}__${ast.name}`;
+    context.asm += `LABEL__${context.fn.name}__${ast.name}:\n`;
   }
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
@@ -398,7 +398,7 @@ function GenerateAsm(ast, context) {
     let bodyLabel = context.label++;
     let nextLabel = context.label++;
     
-    let preservedContinueLabel = context.continueLabel; context.continueLabel = condLabel;
+    let preservedContinueLabel = context.continueLabel; context.continueLabel = nextLabel;
     let preservedBreakLabel    = context.breakLabel;    context.breakLabel    = nextLabel;
     {
       context.asm += `LABEL__${context.fn.name}__${bodyLabel}:\n`;
@@ -412,12 +412,12 @@ function GenerateAsm(ast, context) {
     let bodyLabel = context.label++;
     let nextLabel = context.label++;
     
-    let preservedContinueLabel = context.continueLabel; context.continueLabel = condLabel;
+    let preservedContinueLabel = context.continueLabel; context.continueLabel = bodyLabel;
     let preservedBreakLabel    = context.breakLabel;    context.breakLabel    = nextLabel;
     {
       context.asm += `LABEL__${context.fn.name}__${bodyLabel}:\n`;
       GenerateAsm(ast.body, context);
-      context.asm += `  jmp   LABEL__${context.fn.name}__${bodyLabel}:\n`;
+      context.asm += `  jmp   LABEL__${context.fn.name}__${bodyLabel}\n`;
       context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
     }
     context.continueLabel = preservedContinueLabel;
@@ -439,7 +439,7 @@ function GenerateAsm(ast, context) {
       context.asm += `LABEL__${context.fn.name}__${bodyLabel}:\n`;
       GenerateAsm(ast.body, context);
       context.asm += `  jmp   LABEL__${context.fn.name}__${condLabel}\n`;
-      context.asm += `LABEL__${context.fn.name}__${nextLabel}\n`;
+      context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
     }
     context.continueLabel = preservedContinueLabel;
     context.breakLabel    = preservedBreakLabel;
@@ -473,30 +473,40 @@ function GenerateAsm(ast, context) {
       throw new Error(`Cannot return struct type.`);
     }
     else if (ast.type.tag === "FunctionType") {
-      context.asm += `  movq  -${ast.value.loffset}(%rbp), %rax\n`;
-      context.asm += `  jmp   LABEL__${ast.fn.name}__EPILOGUE\n`;
+      GenerateAsm(ast.expression, context);
+      context.asm += `  movq  -${ast.expression.loffset}(%rbp), %rax\n`;
+      context.asm += `  jmp   LABEL__${context.fn.name}__EPILOGUE\n`;
     }
     else if (ast.type.tag === "PointerType") {
-      context.asm += `  movq  -${ast.value.loffset}(%rbp), %rax\n`;
-      context.asm += `  jmp   LABEL__${ast.fn.name}__EPILOGUE\n`;
+      GenerateAsm(ast.expression, context);
+      context.asm += `  movq  -${ast.expression.loffset}(%rbp), %rax\n`;
+      context.asm += `  jmp   LABEL__${context.fn.name}__EPILOGUE\n`;
     }
     else if (ast.type.tag === "IntegerType") {
       let x = affix(width(ast.type));
       let a = reg(width(ast.type), "rax");
       
-      context.asm += `  mov${x}  -${ast.value.loffset}(%rbp), ${a}\n`;
-      context.asm += `  jmp   LABEL__${ast.fn.name}__EPILOGUE\n`;
+      GenerateAsm(ast.expression, context);
+      context.asm += `  mov${x}  -${ast.expression.loffset}(%rbp), ${a}\n`;
+      context.asm += `  jmp   LABEL__${context.fn.name}__EPILOGUE\n`;
     }
     else if (ast.type.tag === "BooleanType") {
-      context.asm += `  movb  -${ast.value.loffset}(%rbp), %al\n`;
-      context.asm += `  jmp   LABEL__${ast.fn.name}__EPILOGUE\n`;
+      GenerateAsm(ast.expression, context);
+      context.asm += `  movb  -${ast.expression.loffset}(%rbp), %al\n`;
+      context.asm += `  jmp   LABEL__${context.fn.name}__EPILOGUE\n`;
+    }
+    else if (ast.type.tag === "VoidType") {
+      if (ast.value != null) throw new Error(`Cannot return value from function with void return type.`);
+    }
+    else if (ast.type.tag === "HaltType") {
+      throw new Error(`Cannot return from function with halt return type.`);
     }
     else {
       throw new Error(`Invalid type ${ast.type.tag}.`);
     }
   }
   else if (ast.tag === "GotoStatement") {
-    context.asm += `  jmp   LABEL__${ast.fn.name}__${ast.name}\n`;
+    context.asm += `  jmp   LABEL__${context.fn.name}__${ast.name}\n`;
   }
   else if (ast.tag === "ExpressionStatement") {
     GenerateAsm(ast.expression, context);

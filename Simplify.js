@@ -192,7 +192,7 @@ function Simplify(ast, context) {
   else if (ast.tag === "NotCondition") {
     ast.a = ConvertCondition(ast.a);
 
-    Simplify(ast, context);
+    Simplify(ast.a, context);
   }
   else if (ast.tag === "ComparisonCondition") {
     Simplify(ast.a, context);

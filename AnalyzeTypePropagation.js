@@ -21,7 +21,7 @@ let Symtab = require("./Symtab.js");
 let unify  = require("./unify.js");
 
 
-function AnalyzeTypePropagation(ast) {
+function AnalyzeTypePropagation(ast, context) {
   if (ast == null) {
   }
   
@@ -40,18 +40,18 @@ function AnalyzeTypePropagation(ast) {
   
   
   else if (ast.tag === "VariableDeclaration") {
-    AnalyzeTypePropagation(ast.value);
+    AnalyzeTypePropagation(ast.value, {});
   }
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    AnalyzeTypePropagation(ast.body);
+    AnalyzeTypePropagation(ast.body, { fn: ast });
   }
   
   
   else if (ast.tag === "Block") {
     for (let statement of ast.statements) {
-      AnalyzeTypePropagation(statement);
+      AnalyzeTypePropagation(statement, context);
     }
   }
   
@@ -61,28 +61,28 @@ function AnalyzeTypePropagation(ast) {
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
       if (variable.value != null) {
-        AnalyzeTypePropagation(variable.value);
+        AnalyzeTypePropagation(variable.value, context);
       }
     }
   }
   else if (ast.tag === "IfStatement") {
-    AnalyzeTypePropagation(ast.condition);
-    AnalyzeTypePropagation(ast.consiquent);
-    AnalyzeTypePropagation(ast.alternative);
+    AnalyzeTypePropagation(ast.condition, context);
+    AnalyzeTypePropagation(ast.consiquent, context);
+    AnalyzeTypePropagation(ast.alternative, context);
   }
   else if (ast.tag === "OnceStatement") {
-    AnalyzeTypePropagation(ast.body);
+    AnalyzeTypePropagation(ast.body, context);
   }
   else if (ast.tag === "ForeverStatement") {
-    AnalyzeTypePropagation(ast.body);
+    AnalyzeTypePropagation(ast.body, context);
   }
   else if (ast.tag === "WhileStatement") {
-    AnalyzeTypePropagation(ast.condition);
-    AnalyzeTypePropagation(ast.body);
+    AnalyzeTypePropagation(ast.condition, context);
+    AnalyzeTypePropagation(ast.body, context);
   }
   else if (ast.tag === "DoWhileStatement") {
-    AnalyzeTypePropagation(ast.body);
-    AnalyzeTypePropagation(ast.condition);
+    AnalyzeTypePropagation(ast.body, context);
+    AnalyzeTypePropagation(ast.condition, context);
   }
   else if (ast.tag === "BreakStatement") {
   }
@@ -90,98 +90,104 @@ function AnalyzeTypePropagation(ast) {
   }
   else if (ast.tag === "ReturnStatement") {
     if (ast.expression != null) {
-      ast.expression.type = unify(ast.function.return, ast.expression.type);
+      ast.type            = context.fn.return;
+      ast.expression.type = unify(ast.type, ast.expression.type);
     
-      AnalyzeTypePropagation(ast.expression);
+      AnalyzeTypePropagation(ast.expression, context);
+    }
+    else {
+      ast.type = context.fn.return;
     }
   }
   else if (ast.tag === "GotoStatement") {
   }
   else if (ast.tag === "ExpressionStatement") {
-    AnalyzeTypePropagation(ast.expression);
+    AnalyzeTypePropagation(ast.expression, context);
   }
   else if (ast.tag === "EmptyStatement") {
   }
   
   
   else if (ast.tag === "OrCondition") {
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
+    AnalyzeTypePropagation(ast.a, context);
+    AnalyzeTypePropagation(ast.b, context);
   }
   else if (ast.tag === "XorCondition") {
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
+    AnalyzeTypePropagation(ast.a, context);
+    AnalyzeTypePropagation(ast.b, context);
   }
   else if (ast.tag === "AndCondition") {
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
+    AnalyzeTypePropagation(ast.a, context);
+    AnalyzeTypePropagation(ast.b, context);
   }
   else if (ast.tag === "NotCondition") {
-    AnalyzeTypePropagation(ast.a);
+    AnalyzeTypePropagation(ast.a, context);
   }
   else if (ast.tag === "ComparisonCondition") {
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
+    ast.a.type = ast.b.type = unify(ast.a.type, ast.b.type);
+    
+    AnalyzeTypePropagation(ast.a, context);
+    AnalyzeTypePropagation(ast.b, context);
   }
   else if (ast.tag === "ValueCondition") {
-    AnalyzeTypePropagation(ast.value);
+    AnalyzeTypePropagation(ast.value, context);
   }
   
   
   else if (ast.tag === "NullCast") {
-    AnalyzeTypePropagation(ast.argument);
+    AnalyzeTypePropagation(ast.argument, context);
   }
   else if (ast.tag === "ExtendCast") {
-    AnalyzeTypePropagation(ast.argument);
+    AnalyzeTypePropagation(ast.argument, context);
   }
   else if (ast.tag === "BooleanCast") {
-    AnalyzeTypePropagation(ast.argument);
+    AnalyzeTypePropagation(ast.argument, context);
   }
   
   
   else if (ast.tag === "ConditionExpression") {
-    AnalyzeTypePropagation(ast.condition);
+    AnalyzeTypePropagation(ast.condition, context);
   }
   else if (ast.tag === "TernaryExpression") {
     ast.consiquent.type  = unify(ast.type, ast.consiquent.type);
     ast.alternative.type = unify(ast.type, ast.alternative.type);
     
-    AnalyzeTypePropagation(ast.condition);
-    AnalyzeTypePropagation(ast.consiquent);
-    AnalyzeTypePropagation(ast.alternative);
+    AnalyzeTypePropagation(ast.condition, context);
+    AnalyzeTypePropagation(ast.consiquent, context);
+    AnalyzeTypePropagation(ast.alternative, context);
   }
   else if (ast.tag === "InfixExpression") {
     ast.a.type = unify(ast.type, ast.a.type);
     ast.b.type = unify(ast.type, ast.b.type);
     
-    AnalyzeTypePropagation(ast.a);
-    AnalyzeTypePropagation(ast.b);
+    AnalyzeTypePropagation(ast.a, context);
+    AnalyzeTypePropagation(ast.b, context);
   }
   else if (ast.tag === "PrefixExpression") {
     ast.a.type = unify(ast.type, ast.a.type);
     
-    AnalyzeTypePropagation(ast.a);
+    AnalyzeTypePropagation(ast.a, context);
   }
   else if (ast.tag === "RefExpression") {
     ast.a.type.target = unify(ast.type, ast.a.type.target);
     
-    AnalyzeTypePropagation(ast.a);
+    AnalyzeTypePropagation(ast.a, context);
   }
   else if (ast.tag === "AddrExpression") {
     ast.location.type = unify(ast.type.target, ast.location.type);
     
-    AnalyzeTypePropagation(ast.location);
+    AnalyzeTypePropagation(ast.location, context);
   }
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
     ast.value.type = unify(ast.type, ast.value.type);
     
-    AnalyzeTypePropagation(ast.location);
-    AnalyzeTypePropagation(ast.value);
+    AnalyzeTypePropagation(ast.location, context);
+    AnalyzeTypePropagation(ast.value, context);
   }
   else if (ast.tag === "FieldExpression") {
-    AnalyzeTypePropagation(ast.subject);
+    AnalyzeTypePropagation(ast.subject, context);
   }
   else if (ast.tag === "CallExpression") {
     if (ast.arguments.length < ast.subject.type.parameters.length) {
@@ -233,9 +239,9 @@ function AnalyzeTypePropagation(ast) {
       throw new Error(`Cannot return struct type.`);
     }
     
-    AnalyzeTypePropagation(ast.subject);
+    AnalyzeTypePropagation(ast.subject, context);
     for (let argument of ast.arguments) {
-      AnalyzeTypePropagation(argument);
+      AnalyzeTypePropagation(argument, context);
     }
   }
   else if (ast.tag === "InitStructExpression") {
@@ -277,8 +283,8 @@ function AnalyzeTypePropagation(ast) {
     }
     
     for (let a of ast.arguments) {
-      if (a.tag === "Keyval") AnalyzeTypePropagation(a.value);
-      else                    AnalyzeTypePropagation(a);
+      if (a.tag === "Keyval") AnalyzeTypePropagation(a.value, context);
+      else                    AnalyzeTypePropagation(a, context);
     }
   }
   
