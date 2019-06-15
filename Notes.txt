@@ -1,10 +1,10 @@
-## Arrays ##
+---- Arrays ----
 
 let array_1 <- Array{i64, 6}[0, 1, 2, 3, 4, 5]
 let array_2 <- Array{i64, 6}[]
 
 
-## Parametric Types ##
+---- Parametric Types ----
 
 Most interesting types are somewhat parametric. Arrays and similar types are 
 the most obvious example, but technically so are pointers.
@@ -14,3 +14,94 @@ Array{i64}
 
 addr{i64}
 
+  
+---- macOS x86-64 Calling Convention Notes ----
+
+  * rdx:rax is return value.
+  * rdi, rsi, rdx, rcx, r8, r9 are integer parameters.
+  * rbx, rsp, rbp, r12, r13, r14, r15 are preserved.
+  * r10 is the static chain pointer, not used by C programs (i.e., scratch).
+  * r11 is scratch.
+  
+  * zmm0-zmm7 are FP parameters.
+  * zmm8-zmm31 are FIXME[scratch|preserved].
+  * k0-k7 are FIXME[scratch|preserved].
+  
+  * DF in %rFLAGS must be clear on function entry and exit (direction flag should be set to forward).
+  * x87 (not MMX) mode should be set on function entry and exit.
+  * x87 registers are scratch and MMX cannot be set, use `femms` to switch to x87 before exit if necessary.
+  * MXCSR and x87 control bits are preserved.
+  * MXCSR and x87 status bits are scratch.
+  
+  * Stack alignment must at least 16 bytes.
+  * When a 32 byte parameter is passed call stack alignment must be at least 32 bytes.
+  * When a 64 byte parameter is passed call stack alignment must be at least 64 bytes.
+  
+  * rbp where used should point directly to preserved rbp location.
+  * preserved rbp should be immediately below the return address.
+  * rsp should point to the first stack location in the current frame.
+  * -128(%rsp) is the 'red zone' and may be used by leaf functions instead of a proper frame.
+  * al (not zero/sign extended) for vararg calls must be upper bound on SSE parameters.
+  
+  * _Bool, boot_t and bool (C++) are either 1 byte values 0x01 or 0x00.
+  
+  * Types that are smaller than an 8 byte integer are not zero/sign extended.
+  
+  * _Bool, bool_t and bool (C++) are passed as 8 byte integer.
+  * char, short, int, long, long long and pointers are passed as 8 byte integer.
+  * float, double, _Decimal32 and _Decimal64 are passed as 8 byte SSE.
+  * __int128 are passed as two __int64 struct except with 16 byte alignment when passed on stack.
+  
+  * structs larger than 16 bytes are passed on the stack
+  * small structs are passed as 8 byte chunks.
+  * if a chunk contains any integers it is passed in an alu register.
+  * if a chunk only contains floats or doubles it is passed in SSE.
+  * two floats may need to be packed into a single SSE register.
+  * multiple integers and possibly a float may need to be packed into a single ALU register.
+
+
+---- Note on macOS Executable Format ----
+
+macOS uses a small executable memory layout (object) model, and doesn't require
+complex handling of offset tables in current x86-64 systems, but there are
+potentially some cases which might require the use of `name@GOTPCREL(%rip)`
+style indirect accesses of data, where the data is considered too large to
+be put into the 2GB region of an executable, and is instead put in the larger
+4GB region from beginning from the GOT.
+
+These large addresses require a proper offsets and thus all code and small 
+data are stored within ±2GB of the GOT, and large objects may be 2-4GB after
+the GOT which will still be within the 4GB size limit imposed by the macOS ABI 
+on executable/library memory layouts.
+
+Also, any data element that is not defined in the current executable must be
+accessed through `callq name` or `movq name@GOTPCREL(%rip), %rax; 
+movq (%rax), %rax`. The former will in cases where the name is not local to 
+the linked file, automatically generate a very near call into a trampoline at 
+the end of the current procedure, responsible for loading the correct address 
+and branching to it. Basically, both methods are effectively the same, more 
+or less.
+
+
+---- Order Operations in Assembly ----
+
+In the current code configuration, I don't have any way to generate single
+byte instruction operands only eight byte instruction operands. Because of
+this it was easier to simply not support ordering operators.
+
+It should be possible to implement an ordering operator similar to the
+following at a assembly level:
+
+ord_i64(rdi, rsi)  ## Parameters rdi, rsi; returning rax; scratching rdx.
+  cmpq   rdi, rsi  ## These could possibly be in same registers?
+  setl   al
+  setg   dl
+  subb   al, dl
+  movzbq rax, al
+
+The following table indicates the correlation between flags and ordering.
+
+              Result  Less  Greater  Below  Above  Equal
+Ascending          1     1        0      1      0      0
+Equal              0     0        0      0      0      1
+Descending        -1     0        1      0      1      0
