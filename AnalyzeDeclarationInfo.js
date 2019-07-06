@@ -199,7 +199,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   else if (ast.tag === "RefExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
   }
   else if (ast.tag === "LookupExpression") {
   }
@@ -237,7 +237,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   }
   else if (ast.tag === "BooleanLiteral") {
   }
-  else if (ast.tag === "NullLiteral") {
+  else if (ast.tag === "NullPtrLiteral") {
   }
   
   

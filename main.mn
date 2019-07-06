@@ -6,6 +6,13 @@ fn printf[[i8] string, ...] i32;
 fn puts[[i8] string] i32;
 fn exit[i32 exit_code] halt;
 
+-- let a <- array{i64, 10}[];
+
 fn main[] halt {
+  let a <- 100 as i64;
+  let p <- ptr[a];
+  
+  printf["Hello world with a == %d.\n", ref[p]];
+  
   exit[0];
 }

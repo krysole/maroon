@@ -35,6 +35,10 @@ function Simplify(ast, context) {
       Simplify(field, context);
     }
   }
+  else if (ast.tag === "ArrayType") {
+    Simplify(ast.type);
+    Simplify(ast.count);
+  }
   else if (ast.tag === "FunctionType") {
     for (let parameter of ast.parameters) {
       Simplify(parameter, context);
@@ -239,8 +243,8 @@ function Simplify(ast, context) {
       
       return;
     }
-    if (ast.argument.tag === "NullLiteral" && ast.type.tag === "PointerType") {
-      Object.transmute(ast, { tag: "NullLiteral", type: ast.type });
+    if (ast.argument.tag === "NullPtrLiteral" && ast.type.tag === "PointerType") {
+      Object.transmute(ast, { tag: "NullPtrLiteral", type: ast.type });
       
       Simplify(ast, context);
       
@@ -288,14 +292,8 @@ function Simplify(ast, context) {
       Simplify(ast.a, context);
     }
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     Simplify(ast.location, context);
-    
-    if (ast.location.tag.match(/Type/)) {
-      Object.transmute(ast, { tag: "PointerType", target: ast.location });
-      
-      Simplify(ast);
-    }
   }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
@@ -323,21 +321,31 @@ function Simplify(ast, context) {
     
     if (ast.subject.tag === "Primitive" && ast.subject.name === "ref") {
       if (ast.arguments.length !== 1) {
-        throw new Error("ref primitive must have one argument");
+        throw new Error("ref primitive expects one argument");
       }
       
       Object.transmute(ast, { tag: "RefExpression", a: ast.arguments[0] });
       
       Simplify(ast, context);
     }
-    else if (ast.subject.tag === "Primitive" && ast.subject.name === "addr") {
-      if (ast.arguments.length !== 1) {
-        throw new Error("addr primitive must have one argument");
+    else if (ast.subject.tag === "PointerType") {
+      if (ast.arguments.length === 0) {
+        Object.transmute(ast, { tag: "NullPtrLiteral", type: ast.subject });
+        
+        if (ast.target == null) {
+          ast.target = { tag: "VoidType" };
+        }
+        
+        Simplify(ast, context);
       }
-      
-      Object.transmute(ast, { tag: "AddrExpression", location: ast.arguments[0] });
-      
-      Simplify(ast, context);
+      else if (ast.arguments.length === 1) {
+        Object.transmute(ast, { tag: "PtrExpression", location: ast.arguments[0], type: ast.subject });
+        
+        Simplify(ast, context);
+      }
+      else {
+        throw new Error("ptr primitive must have no arguments or a location argument");
+      }
     }
     else if (ast.subject.tag === "StructType") {
       Object.transmute(ast, { tag: "InitStructExpression", type: ast.subject, arguments: ast.arguments });
@@ -348,6 +356,27 @@ function Simplify(ast, context) {
       for (let argument of ast.arguments) {
         Simplify(argument, context);
       }
+    }
+  }
+  else if (ast.tag === "SpecExpression") {
+    Simplify(ast.subject, context);
+    
+    if (ast.subject.tag === "PointerType") {
+      if (ast.arguments.length !== 1) throw new Error(`Pointer specialization expected exactly one parameter.`);
+      
+      Simplify(ast.arguments[0], context);
+      
+      if (!ast.arguments[0].tag.match(/Type/)) throw new Error(`Cannot specialize pointer type over non type parameter.`);
+      
+      Object.transmute(ast, { tag: "PointerType", target: ast.arguments[0] });
+      
+      Simplify(ast);
+    }
+    else if (ast.subject.tag.match(/Type/)) {
+      throw new Error(`Could not specialize non parametric type ${ast.subject}.`);
+    }
+    else {
+      throw new Error(`Cannot specialize non type ast node ${ast.subject.type}.`);
     }
   }
   else if (ast.tag === "InitStructExpression") {
@@ -378,7 +407,7 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "BooleanLiteral") {
   }
-  else if (ast.tag === "NullLiteral") {
+  else if (ast.tag === "NullPtrLiteral") {
     Simplify(ast.type);
   }
   

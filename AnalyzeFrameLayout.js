@@ -341,7 +341,7 @@ function AnalyzeFrameLayout(ast, context) {
       context.lsize   = Math.max(context.lsize, context.loffset);
     }
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
@@ -453,7 +453,7 @@ function AnalyzeFrameLayout(ast, context) {
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
-  else if (ast.tag === "NullLiteral") {
+  else if (ast.tag === "NullPtrLiteral") {
     ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);

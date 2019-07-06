@@ -258,6 +258,7 @@ grammar Parser {
       ( p(".") id:n                               !{ tag: "FieldExpression", subject: e, name: n }:e
       | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
       | p("[") ( keyval     ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
+      | p("{") ( expression ; p(",") )*:as p("}") !{ tag: "SpecExpression",  subject: e, arguments: as }:e
       )*
       !e
     ;
@@ -274,7 +275,6 @@ grammar Parser {
     | stringLiteral
     | id("true")  !{ tag: "BooleanLiteral", value: true }
     | id("false") !{ tag: "BooleanLiteral", value: false }
-    | id("null")  !{ tag: "NullLiteral" }
     ;
   
   

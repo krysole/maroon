@@ -154,7 +154,7 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "RefExpression") {
     AnalyzeAddrReferences(ast.a);
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     AnalyzeAddrReferences(ast.location);
     
     if (ast.location.ref) {
@@ -211,7 +211,7 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "IntegerLiteral") {}
   else if (ast.tag === "StringLiteral") {}
   else if (ast.tag === "BooleanLiteral") {}
-  else if (ast.tag === "NullLiteral") {}
+  else if (ast.tag === "NullPtrLiteral") {}
   
   
   else {

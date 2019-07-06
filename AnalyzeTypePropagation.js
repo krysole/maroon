@@ -173,7 +173,7 @@ function AnalyzeTypePropagation(ast, context) {
     
     AnalyzeTypePropagation(ast.a, context);
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     ast.location.type = unify(ast.type.target, ast.location.type);
     
     AnalyzeTypePropagation(ast.location, context);
@@ -300,11 +300,9 @@ function AnalyzeTypePropagation(ast, context) {
   }
   else if (ast.tag === "BooleanLiteral") {
   }
-  else if (ast.tag === "NullLiteral") {
-    if (ast.type.target != null) {
-    }
-    else {
-      throw new Error("Null literal was not typed during type propagation.");
+  else if (ast.tag === "NullPtrLiteral") {
+    if (ast.type.target == null) {
+      ast.type.target = { tag: "VoidType" };
     }
   }
   

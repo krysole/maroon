@@ -268,7 +268,7 @@ function GenerateAsm(ast, context) {
         if (value.value) context.asm += `  .byte    1\n`;
         else             context.asm += `  .byte    0\n`;
       }
-      else if (value.tag === "NullLiteral") {
+      else if (value.tag === "NullPtrLiteral") {
         context.asm += `  .quad    0\n`;
       }
       else {
@@ -967,7 +967,7 @@ function GenerateAsm(ast, context) {
       }
     }
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     GenerateAsm(ast.location, context);
     context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
   }
@@ -1303,7 +1303,7 @@ function GenerateAsm(ast, context) {
     context.asm += `  movb  ${ast.value ? "$1" : "$0"}, %al\n`;
     context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
   }
-  else if (ast.tag === "NullLiteral") {
+  else if (ast.tag === "NullPtrLiteral") {
     context.asm += `  xorq  %rax, %rax\n`;
     context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
   }

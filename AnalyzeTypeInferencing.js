@@ -298,7 +298,7 @@ function AnalyzeTypeInferencing(ast) {
       throw new Error(`Cannot reference non pointer type.`);
     }
   }
-  else if (ast.tag === "AddrExpression") {
+  else if (ast.tag === "PtrExpression") {
     AnalyzeTypeInferencing(ast.location);
     
     if (ast.location.ref) {
@@ -392,7 +392,7 @@ function AnalyzeTypeInferencing(ast) {
     if (ast.type == null) ast.type = { tag: "BooleanType" };
     ast.ref = false;
   }
-  else if (ast.tag === "NullLiteral") {
+  else if (ast.tag === "NullPtrLiteral") {
     if (ast.type == null) ast.type = { tag: "PointerType", target: null };
     ast.ref = false;
   }
