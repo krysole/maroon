@@ -352,6 +352,18 @@ function Simplify(ast, context) {
       
       Simplify(ast, context);
     }
+    else if (ast.subject.tag === "IntegerType") {
+      if (ast.arguments.length !== 1) {
+        throw new Error("Typecast to integer expects a single argument.");
+      }
+      
+      Object.transmute(ast, { tag: "TypecastExpression", type: ast.subject, argument: ast.arguments[0] });
+      
+      Simplify(ast, context);
+    }
+    else if (ast.subject.tag.match(/Type/)) {
+      throw new Error("Cannot simplify call with type subject.");
+    }
     else {
       for (let argument of ast.arguments) {
         Simplify(argument, context);
