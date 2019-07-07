@@ -37,7 +37,6 @@ function Simplify(ast, context) {
   }
   else if (ast.tag === "ArrayType") {
     Simplify(ast.type);
-    Simplify(ast.count);
   }
   else if (ast.tag === "FunctionType") {
     for (let parameter of ast.parameters) {
@@ -316,6 +315,10 @@ function Simplify(ast, context) {
   else if (ast.tag === "FieldExpression") {
     Simplify(ast.subject, context);
   }
+  else if (ast.tag === "SubscriptExpression") {
+    Simplify(ast.subject, context);
+    Simplify(ast.index, context);
+  }
   else if (ast.tag === "CallExpression") {
     Simplify(ast.subject, context);
     
@@ -352,6 +355,11 @@ function Simplify(ast, context) {
       
       Simplify(ast, context);
     }
+    else if (ast.subject.tag === "ArrayType") {
+      Object.transmute(ast, { tag: "InitArrayExpression", type: ast.subject, arguments: ast.arguments });
+      
+      Simplify(ast, context);
+    }
     else if (ast.subject.tag === "IntegerType") {
       if (ast.arguments.length !== 1) {
         throw new Error("Typecast to integer expects a single argument.");
@@ -384,6 +392,32 @@ function Simplify(ast, context) {
       
       Simplify(ast);
     }
+    else if (ast.subject.tag === "ArrayType") {
+      for (let a of ast.arguments) {
+        Simplify(a, context);
+      }
+      
+      if (ast.arguments.length === 1 && ast.arguments[0].tag.match(/type/)) {
+        Object.transmute(ast, { tag: "ArrayType", type: ast.arguments[0], count: ast.subject.count });
+        
+        Simplify(ast, context);
+      }
+      else if (ast.arguments.length === 1 && ast.arguments[0].tag === "IntegerLiteral") {
+        Object.transmute(ast, { tag: "ArrayType", type: ast.subject.type, count: ast.arguments[0].value.toNumber() });
+        
+        Simplify(ast, context);
+      }
+      else if (ast.arguments.length === 2 &&
+               ast.arguments[0].tag.match(/Type/) &&
+               ast.arguments[1].tag === "IntegerLiteral") {
+        Object.transmute(ast, { tag: "ArrayType", type: ast.arguments[0], count: ast.arguments[1].value.toNumber() });
+        
+        Simplify(ast, context);
+      }
+      else {
+        throw new Error("Invalid specialization parameters for array type.");
+      }
+    }
     else if (ast.subject.tag.match(/Type/)) {
       throw new Error(`Could not specialize non parametric type ${ast.subject}.`);
     }
@@ -409,6 +443,13 @@ function Simplify(ast, context) {
         
         Simplify(a, context);
       }
+    }
+  }
+  else if (ast.tag === "InitArrayExpression") {
+    Simplify(ast.type, context);
+    
+    for (let a of ast.arguments) {
+      Simplify(a, context);
     }
   }
   

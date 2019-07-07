@@ -342,6 +342,12 @@ function AnalyzeFrameLayout(ast, context) {
     }
   }
   else if (ast.tag === "PtrExpression") {
+    preservedloffset = context.loffset;
+    {
+      AnalyzeFrameLayout(ast.location, context);
+    }
+    context.loffset = preservedloffset;
+    
     ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
@@ -360,7 +366,7 @@ function AnalyzeFrameLayout(ast, context) {
     preservedloffset = context.loffset;
     {
       AnalyzeFrameLayout(ast.location, context);
-      ast.addroffset  = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      ast.addroffset  = context.loffset + pad(context.loffset, 8) + 8;
       context.loffset = ast.addroffset;
       context.lsize   = Math.max(context.lsize, context.loffset);
       AnalyzeFrameLayout(ast.value, context);
@@ -375,6 +381,26 @@ function AnalyzeFrameLayout(ast, context) {
     preservedloffset = context.loffset;
     {
       AnalyzeFrameLayout(ast.subject, context);
+    }
+    context.loffset = preservedloffset;
+    
+    if (ast.addr) {
+      // Just leave the address in a working register.
+    }
+    else {
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+    }
+  }
+  else if (ast.tag === "SubscriptExpression") {
+    preservedloffset = context.loffset;
+    {
+      AnalyzeFrameLayout(ast.subject, context);
+      ast.addroffset  = context.loffset + pad(context.loffset, 8) + 8;
+      context.loffset = ast.addroffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+      AnalyzeFrameLayout(ast.index, context);
     }
     context.loffset = preservedloffset;
     

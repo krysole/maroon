@@ -186,6 +186,17 @@ function AnalyzeAddrReferences(ast) {
     
     ast.subject.addr = true;
   }
+  else if (ast.tag === "SubscriptExpression") {
+    AnalyzeAddrReferences(ast.subject);
+    AnalyzeAddrReferences(ast.index);
+    
+    // NOTE We don't actually care if the subject is a proper reference and not
+    //      a temporary, just that it is addressable, and arrays always have a
+    //      root address that we can use. The ability to obtain a reference to
+    //      the result of a subscript is checked during type analysis.
+    
+    ast.subject.addr = true;
+  }
   else if (ast.tag === "CallExpression") {
     AnalyzeAddrReferences(ast.subject);
     for (let argument of ast.arguments) {
@@ -199,6 +210,15 @@ function AnalyzeAddrReferences(ast) {
       for (let kv of ast.arguments) {
         AnalyzeAddrReferences(kv.value);
       }
+    }
+    else {
+      for (let a of ast.arguments) {
+        AnalyzeAddrReferences(a);
+      }
+    }
+  }
+  else if (ast.tag === "InitArrayExpression") {
+    if (ast.arguments.length === 0) {
     }
     else {
       for (let a of ast.arguments) {

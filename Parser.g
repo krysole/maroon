@@ -232,10 +232,10 @@ grammar Parser {
     
   mulExpression
     = expExpression:a
-      ( p("*")     expExpression:b !{ tag: "InfixExpression", o: "*",    a: a, b: b }:a
-      | p("/")     expExpression:b !{ tag: "InfixExpression", o: "/",    a: a, b: b }:a
-      | id("quot") expExpression:b !{ tag: "InfixExpression", o: "quot", a: a, b: b }:a
-      | id("rem")  expExpression:b !{ tag: "InfixExpression", o: "rem",  a: a, b: b }:a
+      ( p("*")    expExpression:b !{ tag: "InfixExpression", o: "*",   a: a, b: b }:a
+      | p("/")    expExpression:b !{ tag: "InfixExpression", o: "/",   a: a, b: b }:a
+      | id("quo") expExpression:b !{ tag: "InfixExpression", o: "quo", a: a, b: b }:a
+      | id("rem") expExpression:b !{ tag: "InfixExpression", o: "rem", a: a, b: b }:a
       )*
       !a
     ;
@@ -367,7 +367,7 @@ grammar Parser {
         "return", 
         "goto",
         "and", "xor", "or", "not",
-        "quot", "rem",
+        "quo", "rem",
         "true", "false", "null"
       ].excludes(n)
       !n

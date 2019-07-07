@@ -189,6 +189,10 @@ function AnalyzeTypePropagation(ast, context) {
   else if (ast.tag === "FieldExpression") {
     AnalyzeTypePropagation(ast.subject, context);
   }
+  else if (ast.tag === "SubscriptExpression") {
+    AnalyzeTypePropagation(ast.subject, context);
+    AnalyzeTypePropagation(ast.index, context);
+  }
   else if (ast.tag === "CallExpression") {
     if (ast.arguments.length < ast.subject.type.parameters.length) {
       throw new Error(`Cannot call function with too few arguments.`);
@@ -285,6 +289,21 @@ function AnalyzeTypePropagation(ast, context) {
     for (let a of ast.arguments) {
       if (a.tag === "Keyval") AnalyzeTypePropagation(a.value, context);
       else                    AnalyzeTypePropagation(a, context);
+    }
+  }
+  else if (ast.tag === "InitArrayExpression") {
+    if (ast.arguments.length === 0) {
+    }
+    else {
+      if (ast.count !== ast.arguments.length) {
+        throw new Error("Expected init array arguments count to equal array element count.");
+      }
+      
+      for (let a of ast.arguments) {
+        a.type = unify(ast.type, a.type);
+        
+        AnalyzeTypePropagation(a, context);
+      }
     }
   }
   

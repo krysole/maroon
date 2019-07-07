@@ -353,14 +353,52 @@ function AnalyzeTypeInferencing(ast) {
       throw new Error(`Field does not exist on struct type ${ast.subject.type.name}.`);
     }
   }
-  else if (ast.tag === "CallExpression") {
+  else if (ast.tag === "SubscriptExpression") {
     AnalyzeTypeInferencing(ast.subject);
-    for (let argument of ast.arguments) {
-      AnalyzeTypeInferencing(argument);
+    AnalyzeTypeInferencing(ast.index);
+    
+    if (ast.index.type.tag !== "IntegerType") {
+      throw new Error("SubscriptExpression expected IntegerType index argument.");
     }
     
-    ast.type = ast.subject.type.return;
-    ast.ref  = false;
+    if (ast.index.type.width  == null) ast.index.type.width  = 64;
+    if (ast.index.type.signed == null) ast.index.type.signed = false;
+    
+    if (ast.index.type.width !== 64) {
+      ast.index = {
+        tag:      "ExtendCast",
+        signed:   ast.index.type.signed,
+        type:     { tag: "IntegerType", signed: ast.index.type.signed, width: 64 },
+        argument: ast.index
+      };
+    }
+    
+    ast.type = ast.subject.type.type;
+    ast.ref  = ast.subject.ref;
+  }
+  else if (ast.tag === "CallExpression") {
+    AnalyzeTypeInferencing(ast.subject);
+    
+    if (ast.subject.type.tag === "ArrayType") {
+      if (ast.arguments.length !== 1) {
+        throw new Error("Expected one argument for array subscript.");
+      }
+      
+      Object.transmute(ast, { tag: "SubscriptExpression", subject: ast.subject, index: ast.arguments[0] });
+      
+      AnalyzeTypeInferencing(ast);
+    }
+    else if (ast.subject.type.tag === "FunctionType") {
+      for (let argument of ast.arguments) {
+        AnalyzeTypeInferencing(argument);
+      }
+      
+      ast.type = ast.subject.type.return;
+      ast.ref  = false;
+    }
+    else {
+      throw new Error("Expected ArrayType or FunctionType as subject of call expression.");
+    }
   }
   else if (ast.tag === "InitStructExpression") {
     if (ast.arguments.length === 0) {
@@ -374,6 +412,19 @@ function AnalyzeTypeInferencing(ast) {
       for (let a of ast.arguments) {
         AnalyzeTypeInferencing(a);
       }
+    }
+    
+    ast.ref = false;
+  }
+  else if (ast.tag === "InitArrayExpression") {
+    if (ast.type.count == null) {
+      ast.type.count = ast.arguments.length;
+    }
+    
+    for (let a of ast.arguments) {
+      AnalyzeTypeInferencing(a);
+      
+      ast.type = unify(ast.type, a.type);
     }
     
     ast.ref = false;
