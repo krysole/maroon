@@ -326,12 +326,12 @@ function GenerateAsm(ast, context) {
       context.asm += `  movq  %rsp, %rbp\n`;
       context.asm += `  subq  $${ast.fsize}, %rsp\n`;
       context.asm += `  .cfi_def_cfa_register %rbp\n`;
-      if (ast.parameters.length >= 1) context.asm += `  movq  %rdi, -${ast.parameters[0].loffset}(%rbp)`;
-      if (ast.parameters.length >= 2) context.asm += `  movq  %rsi, -${ast.parameters[1].loffset}(%rbp)`;
-      if (ast.parameters.length >= 3) context.asm += `  movq  %rdx, -${ast.parameters[2].loffset}(%rbp)`;
-      if (ast.parameters.length >= 4) context.asm += `  movq  %rcx, -${ast.parameters[3].loffset}(%rbp)`;
-      if (ast.parameters.length >= 5) context.asm += `  movq  %r8,  -${ast.parameters[4].loffset}(%rbp)`;
-      if (ast.parameters.length >= 6) context.asm += `  movq  %r9,  -${ast.parameters[5].loffset}(%rbp)`;
+      if (ast.parameters.length >= 1) context.asm += `  movq  %rdi, -${ast.parameters[0].loffset}(%rbp)\n`;
+      if (ast.parameters.length >= 2) context.asm += `  movq  %rsi, -${ast.parameters[1].loffset}(%rbp)\n`;
+      if (ast.parameters.length >= 3) context.asm += `  movq  %rdx, -${ast.parameters[2].loffset}(%rbp)\n`;
+      if (ast.parameters.length >= 4) context.asm += `  movq  %rcx, -${ast.parameters[3].loffset}(%rbp)\n`;
+      if (ast.parameters.length >= 5) context.asm += `  movq  %r8,  -${ast.parameters[4].loffset}(%rbp)\n`;
+      if (ast.parameters.length >= 6) context.asm += `  movq  %r9,  -${ast.parameters[5].loffset}(%rbp)\n`;
       context.asm += `LABEL__${ast.name}__${context.label++}:\n`;
       GenerateAsm(ast.body, context);
       context.asm += `LABEL__${ast.name}__EPILOGUE:\n`;
@@ -1034,6 +1034,9 @@ function GenerateAsm(ast, context) {
       else if (ast.declaration.kind === "LocalVariable") {
         context.asm += `  leaq  -${ast.declaration.loffset}(%rbp), %rax\n`;
       }
+      else if (ast.declaration.kind === "Parameter") {
+        context.asm += `  leaq  -${ast.declaration.loffset}(%rbp), %rax\n`;
+      }
       else {
         throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
       }
@@ -1063,7 +1066,12 @@ function GenerateAsm(ast, context) {
         context.asm += `  mov${x}  -${ast.declaration.loffset}(%rbp), ${a}\n`;
         context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
       }
+      else if (ast.declaration.kind === "Parameter") {
+        context.asm += `  mov${x}  -${ast.declaration.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
       else {
+        console.dir(ast);
         throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
       }
     }
@@ -1257,11 +1265,13 @@ function GenerateAsm(ast, context) {
   }
   else if (ast.tag === "CallExpression") {
     GenerateAsm(ast.subject, context);
+    for (let a of ast.arguments) {
+      GenerateAsm(a, context);
+    }
+    
     context.asm += `  movq  -${ast.subject.loffset}(%rbp), %r11\n`;
     
     for (let i = 0, c = ast.arguments.length; i < c; i++) {
-      GenerateAsm(ast.arguments[i], context);
-      
       if      (i === 0) context.asm += `  movq  -${ast.arguments[0].loffset}(%rbp), %rdi\n`;
       else if (i === 1) context.asm += `  movq  -${ast.arguments[1].loffset}(%rbp), %rsi\n`;
       else if (i === 2) context.asm += `  movq  -${ast.arguments[2].loffset}(%rbp), %rdx\n`;

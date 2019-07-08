@@ -414,21 +414,18 @@ function AnalyzeFrameLayout(ast, context) {
     }
   }
   else if (ast.tag === "CallExpression") {
-    if (ast.subject.type.tag === "FunctionType") {
-      preservedloffset = context.loffset;
-      {
-        AnalyzeFrameLayout(ast.subject, context);
-      }
-      context.loffset = preservedloffset;
+    if (ast.subject.type.tag !== "FunctionType") {
+      throw new Error("Cannot analyze frame layout for call to non function.");
     }
-
-    for (let argument of ast.arguments) {
-      preservedloffset = context.loffset;
-      {
-        AnalyzeFrameLayout(argument, context);
+    
+    preservedloffset = context.loffset;
+    {
+      AnalyzeFrameLayout(ast.subject, context);
+      for (let a of ast.arguments) {
+        AnalyzeFrameLayout(a, context);
       }
-      context.loffset = preservedloffset;
     }
+    context.loffset = preservedloffset;
 
     if (ast.type.tag !== "HaltType" && ast.type.tag !== "VoidType") {
       ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
@@ -436,9 +433,7 @@ function AnalyzeFrameLayout(ast, context) {
       context.lsize   = Math.max(context.lsize, context.loffset);
     }
 
-    if (ast.subject.type.tag === "FunctionType") {
-      context.psize = Math.max(context.psize, 8 * (ast.arguments.length - 6));
-    }
+    context.psize = Math.max(context.psize, 8 * (ast.arguments.length - 6));
   }
   else if (ast.tag === "InitStructExpression") {
     if (ast.arguments.length === 0) {
