@@ -51,7 +51,7 @@ grammar Parser {
     ;
   
   functionDeclaration
-    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") ptype:r fnbody:b
+    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r fnbody:b
       !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
@@ -67,11 +67,11 @@ grammar Parser {
     ;
   
   methodBehavior
-    = static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") ptype:r pbody:b
+    = static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") p(":") type:r pbody:b
       !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
-    | static:s visibility:v id:n                                                     ptype:r pbody:b
+    | static:s visibility:v id:n                                                     p(":") type:r pbody:b
       !{ tag: "MethodBehavior", static: s, visibility: v, parameters: [], vaparam: false, rtype: r, body: b }
-    | static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") ptype:r pbody:b
+    | static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r pbody:b
       !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
@@ -314,8 +314,8 @@ grammar Parser {
   
   
   variable
-    = local:n ( p(":") type:t | !null:t ) ( p("<-") expression:e | !null:e )
-      !{ tag: "VariableDeclaration", type: t, name: n, value: e }
+    = local:n p("<-") expression:e
+      !{ tag: "VariableDeclaration", name: n, value: e }
     ;
   
   
@@ -347,17 +347,12 @@ grammar Parser {
     
     
   parameter
-    = local:n ptype:t
+    = local:n p(":") type:t
       !{ tag: "Parameter", name: n, type: t }
     ;
   vaparam
     = p(",") p("...") !true
     |                 !false
-    ;
-  
-  ptype
-    = p(":") type:t !t
-    |               !null
     ;
   
   keyval

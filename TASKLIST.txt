@@ -1,11 +1,5 @@
 TASKLIST
 
-- Change code to check that function parameters have types, since they aren't
-	actually required in procedures/methods, and therefore aren't ensured by the
-	parser. Also remember rtype on functions as well, which does the same for
-	consistency in the parser code.
-- Implement support for variables with specified types, and no specified initializer.
-
 - Implement va parameter primitive functions.
 - Design and implement for loop/enumeration.
 - Implement interval support for enumeration, but not interval objects yet.

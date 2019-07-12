@@ -101,9 +101,9 @@ class Object () {
 
 class Vector (Object) {
   
-  let count;                           -- Variables with no type are always id type.
-  let contents;
-  let tail <- array{4}[];              -- Array types are supported over ids.
+  let count    <- nil;                 -- Variable with id type can be initialized
+  let contents <- nil;                 -- using the nil default value.
+  let tail     <- array{4}[];          -- Array types are supported over ids.
   
   public count do @count;              -- A simple accessor over instance variable.
   
@@ -214,6 +214,64 @@ TRUE:  boolean
 FALSE: boolean
 
 NULL:  ptr        -- Assuming that I have this at all...
+
+
+---- Explicit versus Implicit typing ----
+
+Parameters require explicit types, or must be id references in Fluorite code, 
+since they cannot have default values without the default value emitted and
+passed by the caller during compilation. Return types are the same as parameters.
+
+Conversely, variables can and must have a default value, even if that value
+is just null memory. Null initializers are required for all values and would
+simply be emitted by default if the code only specified the type and not the
+initializer.
+
+Given this, it makes some sense that variables are initialized and parameters
+are type specified.
+
+The only possible exception to this is that this requires that a custom 
+allocate method be generated for all concrete classes, since they too would be
+initialized to default values, if only null values. They can then be initialized
+properly by the objects initialize method afterwards. This is relatively 
+important to do in any reasonable managed runtime system to prevent memory
+corruption anyway, so either default values may be specified, or the memory
+must be cleared to zero.
+
+It may be helpful in some cases for null values that are not cleared memory
+to be allowed, in which case real initializers are absolutely required. The 
+object initialization strategy is designed to not require this, but it may be
+useful when detecting what has or has not been initialized in complex objects.
+
+
+---- The Object Type vs The id Type ----
+
+It occurs to me that the id type is the general catch all id reference type 
+for Fluorite code, similar to Objective-C, and for similar reasons. Like
+Objective-C, most code will generally choose to specify Object rather than id
+directly, but sometimes there isn't a particular reason to specify any actual
+type directly.
+
+The question here is whether we should expect most objects to mixin Object or
+not?
+
+If we generally expect all reasonable objects to mixin Object that behave in 
+any particularly reasonable fashion, then typing to Object as the basic type
+makes sense, similar to most Objective-C or Java programs. On the other hand
+some code may have absolutely no interest in what object is present and that
+may continue to use id as in Objective-C also.
+
+This suggests that figuring out whether to use id or Object may not always
+be completely trivial, but I think that its probably simple enough that it
+shouldn't cause any real problems. For the most part, since all instantiable
+objects mixin Object anyway, it probably doesn't actually matter.
+
+Even proxy objects or remote objects technically mixin Object, its just done 
+in a circuitous fashion. Especially with remote objects, which support all 
+of the messages that you would typically expect them to, but obviously cannot
+support type messages directly, so the remote object bridge must implement
+type compatability to bridge class tags between the two environments in order 
+to function correctly.
 
   
 ---- macOS x86-64 Calling Convention Notes ----
