@@ -90,13 +90,13 @@ function AnalyzeTypePropagation(ast, context) {
   }
   else if (ast.tag === "ReturnStatement") {
     if (ast.expression != null) {
-      ast.type            = context.fn.return;
+      ast.type            = context.fn.rtype;
       ast.expression.type = unify(ast.type, ast.expression.type);
     
       AnalyzeTypePropagation(ast.expression, context);
     }
     else {
-      ast.type = context.fn.return;
+      ast.type = context.fn.rtype;
     }
   }
   else if (ast.tag === "GotoStatement") {

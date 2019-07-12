@@ -42,7 +42,7 @@ function Simplify(ast, context) {
     for (let parameter of ast.parameters) {
       Simplify(parameter, context);
     }
-    Simplify(ast.return, context);
+    Simplify(ast.rtype, context);
   }
   else if (ast.tag === "PointerType") {
     Simplify(ast.target, context);
@@ -77,7 +77,7 @@ function Simplify(ast, context) {
     for (let parameter of ast.parameters) {
       Simplify(parameter, { unit: context.unit, function: ast, scope: ast });
     }
-    Simplify(ast.return, { unit: context.unit, function: ast, scope: ast });
+    Simplify(ast.rtype, { unit: context.unit, function: ast, scope: ast });
     Simplify(ast.body, { unit: context.unit, function: ast, scope: ast });
   }
   

@@ -14,6 +14,207 @@ Array{i64}
 
 addr{i64}
 
+
+---- Fluorite Runtime System Calling Convention ----
+
+The Fluorite Runtime System has to deal with two basic constraints when dealing
+with message sends, and therefore method activation (calls). Those constraints
+are C interopability, and effecient language feature implementation.
+
+Interopability with C mostly just requires that we can call C, but the cost
+of implementing different strategies for doing so vary significantly. The
+strategy considered here is a combined stack strategy, where C and Fluorite
+frames are freely intermixed and basic debugging symbols for statically 
+compiled code are provided for both allowing basic backtraces and stack
+inspection without additional tooling, although such tooling is expected to
+allow more comprehensive analysis of Maroon and Fluorite code and data.
+
+Some features of Fluorite prevent the use of the C ABI directly, as it is used
+in Objective-C. These features are looked at briefly below, along with the
+consiquence to compatability.
+
+Tail messages allow a method to jump to the body of another message without
+consuming any additional stack space. This can be extremely efficient for
+some algorithms and when done explicitly, as it is in Fluorite, we can avoid
+issues like inconsistent stack analysis. To ensure that we can make tail
+messages as efficient as possible it is helpful to know exactly how many 
+arguments we actually have so that we don't have to spill or fill all of the
+registers that are used for parameters. In the AMD64T C ABI used by macOS
+there are several general purpose as well as vector float registers used
+for parameter passing, which would necessitate a significant amount of 
+overhead for such a feature.
+
+Multiary parameters allow an arbitrary number of strictly reference parameters
+to be provided to a method. Primitive types must use specialized method
+definitions directly, and cannot use generic method handlers, where multiary
+parameters are a way to access generic method parameters directly in a flexible
+and programatic fashion. These parameters can then be converted into a Vector
+or other data structure if required, or could even be peeled of one by one
+while checking for the number of arguments actually provided per call.
+
+The issue with multiary parameters is that they must be in an efficient format
+since we are likely to use them somewhat more frequently than variadic functions
+in C. Making them consistently stack based with a count passed by register, 
+would accomplish this in a simple fashion.
+
+The basic strategy appears to be as follows, pass parameters in a parameter
+window on the stack. The stack frames are statically sized similarly to C.
+The number of actual arguments is passed in a register. Basic data like the
+selector information, not just the receiver, should also be passed as parameters
+as they are in Objective-C. This will allow calls to perform tail messages 
+correctly, as well as evaluate code conditionally on the selector without an
+additional calling convention. Call-site metadata is also calculated, but it
+is not reused by tail messages or any other messaging mechanism, so it can be
+left in registers. There is also the closure parent object, which can just
+be passed in a register also, since it is method specific.
+
+There are also some other thread local variables that can be retained in
+registers for performance and convenience. The managed frame link can be
+computed and left in a register for fast access, for example. The managed
+frame link points to the beginning of the Garbage Collector information for 
+the frame, and is spilled into a fiber object afterwards. Respectively, the
+fiber reference can also be stored in a register for convenience and fast
+access. The fiber object also indicates its thread using whatever passes
+on the OS in question as a thread id, but that is simply for tools or other
+inspectors to interrogate as required.
+
+
+---- Minimal Object System for Bootstrapping Fluorite ----
+
+class Object () {
+  
+  static public [...] {                -- va parameters.
+    goto allocate.initialize(...);     -- Tail message with original parameters.
+  }
+  
+  static allocate {                    -- Note static is for class methods.
+    ...
+  }
+  
+  private public  do @public           -- Abridged notation for method decl.
+  private private do @private          -- @private/@public are built in per object.
+  private super   do @super            -- @super is also built in for each object.
+  
+  private initialize do @public        -- By default init returns @public.
+  
+}
+
+class Vector (Object) {
+  
+  let count;                           -- Variables with no type are always id type.
+  let contents;
+  let tail <- array{4}[];              -- Array types are supported over ids.
+  
+  public count do @count;              -- A simple accessor over instance variable.
+  
+  public [index] do @tail[index];      -- Remember that arrays are bounds checked.
+  
+  private initialize(...) {
+    if va_count[] > 4 then abort[];    -- va parameters count.
+    
+    super.initialize                   -- @super provides the super message table.
+    
+    count <- va_count[];               -- count is actually the accessors for @count.
+    for i in va_domain[] {             -- va_domain is interval for va parameters
+      @tail[i] <- va[i];
+    }
+    
+    return public;
+  }
+  
+}
+
+
+---- Object Layout ----
+
+I think that object layout will follow something like the following.
+
+struct Header {
+  a: u64; -- class_link:48, tiny?/size:9, gc:7
+  b: u64; -- hash:48, hash?:1, reserved:6, slot_count:9
+}
+
+struct Object {
+  header: Header;
+  slots:  array{id,  header.slot_count};
+  data:   array{u64, header.size - header.slot_count};
+}
+
+The calculations the GC and runtime need to do to bounds check object 
+accessing are relatively simple since they're just stored directly in the first
+header field. Both the size when accessing bytes, and the slot count when
+calculating the data offset or when bounds checking slot accessing are directly
+available.
+
+The size is the exact number of word pairs used by the object, which has a 
+limit of 256 word pairs in total. This is then bumped by one bit to indicate 
+a sign bit, which can tell us whether we are dealing with a tiny object or a 
+regular object. The total number of bytes has a 4KB byte limit, and it should
+be noted that the size includes the header word pair.
+
+The slot_count is the exact number of slots available, totalling a 512 slot
+limit for any single object. This equals the entire 4KB object size limit. Note
+that the calculating for the slot_count must take into account that the limit
+is not 512, but 510, since two fields are used by the header, and are therefore
+reserved and not for actual use.
+
+
+---- Optimization and Deoptimization ----
+
+Since Fluorite is currently statically compiled, deoptimization is not 
+currently planned, or even really possible without a compiler provided by
+the runtime system to generate the new code, and a runtime facility to load
+it correctly.
+
+The primary optimizations for dynamic languages however, are various kinds of
+inline cachine of message lookups, and method inlining. Object transmutation 
+should also be discussed.
+
+The former isn't really
+affected by anything we're doing and should work more or less unchanged, except
+that monomorphic inline caches are not supported since code in Fluorite is
+never directly writable, instead polymorphic inline cache tables are used 
+instead.
+
+Method inlining is more of a challenge though, since class changes would
+require a recompile of any effected methods. This isn't simply a problem for
+methods that have yet to be activated, but is also a problem for any stacks
+that are currently executing offending out of date methods, that may no longer
+reflect object structure or method behavior.
+
+It probably makes sense to limit object structural change completely and limit
+method replacement when inlining is turned on in the compiler, allowing 
+programs that absolutely must have inlining to perform better, while also
+allowing programs that require maximum flexibility to function correctly until
+a dynamic optimizing and deoptimizing compiler can be written.
+
+Lastly, object transmutation deserves a minor mention on the topic of inlining.
+When a method is inlined, especially accessors, it is likely that another
+objects slots or data might be read directly by a method of a different class.
+This isn't really a problem directly, but if that object is transmuted, the
+slots and data will no longer be tracked by the garbage collector. This
+suggests that methods must be inlined between two runtime system 
+synchronization points, and never accross a synchronization point.
+
+Synchronization points are a specific kind of concurrency barriers also.
+
+
+---- Named Literal Objects versus Named Literal Values ----
+
+It occurs to me that I can't really have object literals for true and
+false, as well as primitive equivalents. The problem is then, should all constants
+in Maroon be capitalized. They probably should anyway, in which case
+true and false could simply be consistent with that convention...
+
+nil:   Nil
+true:  Boolean
+false: Boolean
+
+TRUE:  boolean
+FALSE: boolean
+
+NULL:  ptr        -- Assuming that I have this at all...
+
   
 ---- macOS x86-64 Calling Convention Notes ----
 

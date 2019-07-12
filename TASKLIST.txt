@@ -1,3 +1,21 @@
 TASKLIST
 
-- Start analyzing the design and tasks for the high level compiler.
+- Change code to check that function parameters have types, since they aren't
+	actually required in procedures/methods, and therefore aren't ensured by the
+	parser. Also remember rtype on functions as well, which does the same for
+	consistency in the parser code.
+- Implement support for variables with specified types, and no specified initializer.
+
+- Implement va parameter primitive functions.
+- Design and implement for loop/enumeration.
+- Implement interval support for enumeration, but not interval objects yet.
+
+- Implement code generation, without real garbage collection for now, for
+	methods.
+- Implement fluorite_class_data generation for classes.
+- Update method code generation to at least ensure that the managed references
+	are stored in the stack frame separately from other stack frame data, and that
+	they are at the beginning of the frame, along with a 32 bit count field and 
+	managed frame link field as an offset rather than a pointer.
+
+- Continue analyzing the design and tasks for The Fluorite Programming Language.

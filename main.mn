@@ -2,17 +2,17 @@
 -- Test program.
 --
 
-fn printf[[i8] string, ...] i32;
-fn puts[[i8] string] i32;
-fn exit[i32 exit_code] halt;
+fn printf[string: [i8], ...]: i32;
+fn puts[string: [i8]]: i32;
+fn exit[exit_code: i32]: halt;
 
 let a <- array{i64, 10}[];
 
-fn sum[i64 a, i64 b, i64 c] i64 {
+fn sum[a: i64, b: i64, c: i64]: i64 {
   return a + b * c;
 }
 
-fn main[] halt {
+fn main[]: halt {
   printf["Hello world with sum[1, 2, 3] == 1 + 2 * 3 == %d.\n", sum[1, 2, 3]];
   
   exit[0];

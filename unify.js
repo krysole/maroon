@@ -31,7 +31,7 @@ function unify(a, b) {
       let pb = b.parameters[i];
       unify(pa.type, pb.type);
     }
-    unify(a.return, b.return);
+    unify(a.rtype, b.rtype);
     
     return a;
   }

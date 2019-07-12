@@ -25,9 +25,20 @@ grammar Parser {
   
   
   declaration
-    = structDeclaration
-    | letDeclaration
+    = letDeclaration
+    | classDeclaration
+    | structDeclaration
     | functionDeclaration
+    ;
+  
+  letDeclaration
+    = id("let") ( variable ; p(",") )+:vs p(";")
+      !{ tag: "LetDeclaration", variables: vs }
+    ;
+  
+  classDeclaration
+    = id("class") local:n mixins?:cms mixins?:mms p("{") behavior*:bs p("}")
+      !{ tag: "ClassDeclaration", name: n, behaviors: bs }
     ;
   
   structDeclaration
@@ -39,16 +50,29 @@ grammar Parser {
       !{ tag: "Field", name: n, type: t }
     ;
   
-  letDeclaration
-    = id("let") ( variable ; p(",") )+:vs p(";")
-      !{ tag: "LetDeclaration", variables: vs }
+  functionDeclaration
+    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") ptype:r fnbody:b
+      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
-  functionDeclaration
-    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") type:r block:b
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, return: r, body: b }
-    | id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") type:r p(";")
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, return: r, body: null }
+  
+  behavior
+    = letBehavior
+    | methodBehavior
+    ;
+  
+  letBehavior
+    = id("let") ( variable ; p(",") )+:vs p(";")
+      !{ tag: "LetBehavior", variables: vs }
+    ;
+  
+  methodBehavior
+    = static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") ptype:r pbody:b
+      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
+    | static:s visibility:v id:n                                                     ptype:r pbody:b
+      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: [], vaparam: false, rtype: r, body: b }
+    | static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") ptype:r pbody:b
+      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
   
@@ -155,12 +179,6 @@ grammar Parser {
   emptyStatement
     = p(";")
       !{ tag: "EmptyStatement" }
-    ;
-  
-  
-  block
-    = p("{") statement*:ss p("}")
-      !{ tag: "Block", statements: ss }
     ;
   
   
@@ -287,7 +305,7 @@ grammar Parser {
     ;
   primaryType
     = p("[") p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p("]")
-      !{ tag: "FunctionType", parameters: ps, return: r }
+      !{ tag: "FunctionType", parameters: ps, rtype: r }
     | p("[") type:t p("]")
       !{ tag: "PointerType", target: t }
     | local:n
@@ -296,12 +314,40 @@ grammar Parser {
   
   
   variable
-    = local:n p("<-") expression:e !{ tag: "VariableDeclaration", name: n, value: e }
+    = local:n ( p(":") type:t | !null:t ) ( p("<-") expression:e | !null:e )
+      !{ tag: "VariableDeclaration", type: t, name: n, value: e }
+    ;
+  
+  
+  mixins
+    = p("(") ( local ; p(",") )*:ms p(")") !ms
+    ;
+  
+  
+  fnbody
+    = block
+    | do
+    | p(";") !null
+    ;
+  pbody
+    = block
+    | do
+    ;
+  
+  
+  block
+    = p("{") statement*:ss p("}")
+      !{ tag: "Block", statements: ss }
+    ;
+  do
+    = id("do") expression:e p(";")
+      !{ tag: "ExpressionStatement", expression: e }:s
+      !{ tag: "Block", statements: [s] }
     ;
     
     
   parameter
-    = type:t local:n
+    = local:n ptype:t
       !{ tag: "Parameter", name: n, type: t }
     ;
   vaparam
@@ -309,9 +355,25 @@ grammar Parser {
     |                 !false
     ;
   
+  ptype
+    = p(":") type:t !t
+    |               !null
+    ;
+  
   keyval
     = id:n p(":") expression:v
       !{ tag: "Keyval", key: n, value: v }
+    ;
+  
+  
+  static
+    = id("static") !true
+    |              !false
+    ;
+  
+  visibility
+    = id("public")  !true
+    | id("private") !false
     ;
   
   

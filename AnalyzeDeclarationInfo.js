@@ -90,7 +90,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   
   
   else if (ast.tag === "FunctionDeclaration") {
-    ast.type = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, return: ast.return };
+    ast.type = { tag: "FunctionType", parameters: ast.parameters, vaparam: ast.vaparam, rtype: ast.rtype };
     
     for (let p of ast.parameters) {
       p.kind = "Parameter";

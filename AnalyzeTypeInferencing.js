@@ -393,7 +393,7 @@ function AnalyzeTypeInferencing(ast) {
         AnalyzeTypeInferencing(argument);
       }
       
-      ast.type = ast.subject.type.return;
+      ast.type = ast.subject.type.rtype;
       ast.ref  = false;
     }
     else {
