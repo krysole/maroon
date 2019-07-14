@@ -1,18 +1,18 @@
----- Arrays ----
+---- Vectors ----
 
-let array_1 <- Array{i64, 6}[0, 1, 2, 3, 4, 5]
-let array_2 <- Array{i64, 6}[]
+let vec_1 <- vec{i64, 6}[0, 1, 2, 3, 4, 5]
+let vec_2 <- vec{i64, 6}[]
 
 
 ---- Parametric Types ----
 
-Most interesting types are somewhat parametric. Arrays and similar types are 
+Most interesting types are somewhat parametric. Vectors and similar types are 
 the most obvious example, but technically so are pointers.
 
-Array{i64, 100}
-Array{i64}
+vec{i64, 100}
+vec{i64}
 
-addr{i64}
+ptr{i64}
 
 
 ---- Fluorite Runtime System Calling Convention ----
@@ -103,11 +103,11 @@ class Array (Object) {
   
   let count    <- nil;                 -- Variable with id type can be initialized
   let contents <- nil;                 -- using the nil default value.
-  let tail     <- array{4}[];          -- Array types are supported over ids.
+  let tail     <- vec{4, id}[];        -- Vector types are supported over ids.
   
   public count do @count;              -- A simple accessor over instance variable.
   
-  public [index] do @tail[index];      -- Remember that arrays are bounds checked.
+  public [index] do @tail[index];      -- Remember that vectors are bounds checked.
   
   private initialize(...) {
     if va_count[] > 4 then abort[];    -- va parameters count.
@@ -136,8 +136,8 @@ struct Header {
 
 struct Object {
   header: Header;
-  slots:  array{id,  header.slot_count};
-  data:   array{u64, header.size - header.slot_count};
+  slots:  vec{id,  header.slot_count};
+  data:   vec{u64, header.size - header.slot_count};
 }
 
 The calculations the GC and runtime need to do to bounds check object 
@@ -294,16 +294,16 @@ Given that this is a fairly straightforward concept, my current thinking is
 that it would be useful to consider providing a interim feature that implements
 the common cases directly in the compiler, until traits are implemented. This
 interim feature would work on compiler recognized constructs like interval
-expressions, and domain primitive calls on arrays or similar.
+expressions, and domain primitive calls on vectors or similar.
 
   for i in [0..9] {...}
-  for i in domain[my_array] {...}
-  for e in my_array
+  for i in domain[my_vec] {...}
+  for e in my_vec
 
 The latter avoids the issue of not having proper dot operators yet. If I can
 get a proper dot operator working then the following would probably also work.
 
-  for i in my_array.domain {...}
+  for i in my_vec.domain {...}
 
 The one problem I see immediately is that the above is still just a shorthand
 for proper traits, and therefore also for proper enumerators. Some enumerators

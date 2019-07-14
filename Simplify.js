@@ -35,7 +35,7 @@ function Simplify(ast, context) {
       Simplify(field, context);
     }
   }
-  else if (ast.tag === "ArrayType") {
+  else if (ast.tag === "VectorType") {
     Simplify(ast.type);
   }
   else if (ast.tag === "FunctionType") {
@@ -344,8 +344,8 @@ function Simplify(ast, context) {
       
       Simplify(ast, context);
     }
-    else if (ast.subject.tag === "ArrayType") {
-      Object.transmute(ast, { tag: "InitArrayExpression", type: ast.subject, arguments: ast.arguments });
+    else if (ast.subject.tag === "VectorType") {
+      Object.transmute(ast, { tag: "InitVectorExpression", type: ast.subject, arguments: ast.arguments });
       
       Simplify(ast, context);
     }
@@ -381,30 +381,30 @@ function Simplify(ast, context) {
       
       Simplify(ast);
     }
-    else if (ast.subject.tag === "ArrayType") {
+    else if (ast.subject.tag === "VectorType") {
       for (let a of ast.arguments) {
         Simplify(a, context);
       }
       
       if (ast.arguments.length === 1 && ast.arguments[0].tag.match(/type/)) {
-        Object.transmute(ast, { tag: "ArrayType", element: ast.arguments[0], count: ast.subject.count });
+        Object.transmute(ast, { tag: "VectorType", element: ast.arguments[0], count: ast.subject.count });
         
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 1 && ast.arguments[0].tag === "IntegerLiteral") {
-        Object.transmute(ast, { tag: "ArrayType", element: ast.subject.type, count: ast.arguments[0].value.toNumber() });
+        Object.transmute(ast, { tag: "VectorType", element: ast.subject.type, count: ast.arguments[0].value.toNumber() });
         
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 2 &&
                ast.arguments[0].tag.match(/Type/) &&
                ast.arguments[1].tag === "IntegerLiteral") {
-        Object.transmute(ast, { tag: "ArrayType", element: ast.arguments[0], count: ast.arguments[1].value.toNumber() });
+        Object.transmute(ast, { tag: "VectorType", element: ast.arguments[0], count: ast.arguments[1].value.toNumber() });
         
         Simplify(ast, context);
       }
       else {
-        throw new Error("Invalid specialization parameters for array type.");
+        throw new Error("Invalid specialization parameters for vector type.");
       }
     }
     else if (ast.subject.tag.match(/Type/)) {
@@ -434,7 +434,7 @@ function Simplify(ast, context) {
       }
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     Simplify(ast.type, context);
     
     for (let a of ast.arguments) {

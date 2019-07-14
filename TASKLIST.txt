@@ -1,11 +1,5 @@
 TASKLIST
 
-- Rename array to vector, on the basis that arrays are resizing from the 
-	perspective of most modern dynamic languages like Objective-C/Swift, JavaScript, 
-	Python and Ruby. Only C++ based languages seem to use the terms in reverse.
-	Vectors would be fixed length and intended to be used to improve the performance
-	of mathematical vector calculations, or other fixed count arrays.
-
 - Initialization of array null initialization should be based on a proper loop and
 	not an unrolled loop. Otherwise large arrays would be uninitializable for the
 	most part (without excessive codegen).

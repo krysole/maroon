@@ -26,7 +26,7 @@ function pad(offset, alignment) {
 
 function align(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.align : type.align);
-  else if (type.tag === "ArrayType")    return align(type.element);
+  else if (type.tag === "VectorType")   return align(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -38,7 +38,7 @@ function align(type) {
 
 function sizeof(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.size : type.size);
-  else if (type.tag === "ArrayType")    return type.count * sizeof(type.element);
+  else if (type.tag === "VectorType")   return type.count * sizeof(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -144,8 +144,8 @@ function AnalyzeFrameLayout(ast, context) {
     for (let variable of ast.variables) {
       preservedloffset = context.loffset;
       {
-        if (variable.type.tag === "StructType" || variable.type.tag === "ArrayType") {
-          // Provide a pointer temporary to the struct or array variable.
+        if (variable.type.tag === "StructType" || variable.type.tag === "VectorType") {
+          // Provide a pointer temporary to the struct or vector variable.
           let locationType = { tag: "PointerType", element: null };
           variable.addroffset = context.loffset + pad(context.loffset, align(locationType)) + sizeof(locationType);
           context.loffset     = variable.addroffset;
@@ -189,8 +189,8 @@ function AnalyzeFrameLayout(ast, context) {
       for (let variable of ast.variables) {
         preservedloffset = context.loffset;
         {
-          if (variable.type.tag === "StructType" || variable.type.tag === "ArrayType") {
-            // Provide a pointer temporary to the struct or array variable.
+          if (variable.type.tag === "StructType" || variable.type.tag === "VectorType") {
+            // Provide a pointer temporary to the struct or vector variable.
             let locationType = { tag: "PointerType", element: null };
             variable.addroffset = context.loffset + pad(context.loffset, align(locationType)) + sizeof(locationType);
             context.loffset     = variable.addroffset;
@@ -484,7 +484,7 @@ function AnalyzeFrameLayout(ast, context) {
       }
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     for (let argument of ast.arguments) {
       preservedloffset = context.loffset;
       {

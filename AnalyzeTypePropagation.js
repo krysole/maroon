@@ -296,12 +296,12 @@ function AnalyzeTypePropagation(ast, context) {
       else                    AnalyzeTypePropagation(a, context);
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     if (ast.arguments.length === 0) {
     }
     else {
       if (ast.count !== ast.arguments.length) {
-        throw new Error("Expected init array arguments count to equal array element count.");
+        throw new Error("Expected init vector arguments count to equal vector element count.");
       }
       
       for (let a of ast.arguments) {

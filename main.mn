@@ -7,7 +7,7 @@ fn puts[string: ptr{i8}]: i32;
 fn exit[exit_code: i32]: halt;
 
 fn main[]: halt {
-  let a <- array{i64, 10}[];
+  let a <- vec{i64, 10}[];
   let s <- i64[0];
   
   for i <- i64[0], c <- i64[10]; i < c; i <- i + 1 {

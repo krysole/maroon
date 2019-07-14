@@ -243,7 +243,7 @@ function AnalyzeDeclarationInfo(ast, path) {
       }
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     for (let a of ast.arguments) {
       AnalyzeDeclarationInfo(a);
     }

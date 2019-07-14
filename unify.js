@@ -24,10 +24,10 @@ function unify(a, b) {
     
     return a;
   }
-  else if (a.tag === "ArrayType" && b.tag === "ArrayType") {
+  else if (a.tag === "VectorType" && b.tag === "VectorType") {
     unify(a.element, b.element);
     
-    if (a.count !== b.count) throw new Error("Array count mismatch.");
+    if (a.count !== b.count) throw new Error("Vector count mismatch.");
     
     return a;
   }

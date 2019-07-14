@@ -380,9 +380,9 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "CallExpression") {
     AnalyzeTypeInferencing(ast.subject);
     
-    if (ast.subject.type.tag === "ArrayType") {
+    if (ast.subject.type.tag === "VectorType") {
       if (ast.arguments.length !== 1) {
-        throw new Error("Expected one argument for array subscript.");
+        throw new Error("Expected one argument for vector subscript.");
       }
       
       Object.transmute(ast, { tag: "SubscriptExpression", subject: ast.subject, index: ast.arguments[0] });
@@ -413,7 +413,7 @@ function AnalyzeTypeInferencing(ast) {
       }
     }
     else {
-      throw new Error("Expected ArrayType or FunctionType as subject of call expression.");
+      throw new Error("Expected VectorType or FunctionType as subject of call expression.");
     }
   }
   else if (ast.tag === "InitStructExpression") {
@@ -432,7 +432,7 @@ function AnalyzeTypeInferencing(ast) {
     
     ast.ref = false;
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     if (ast.type.count == null) {
       ast.type.count = ast.arguments.length;
     }

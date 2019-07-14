@@ -190,7 +190,7 @@ function AnalyzeAddrReferences(ast) {
     AnalyzeAddrReferences(ast.subject);
     AnalyzeAddrReferences(ast.index);
     
-    if (ast.subject.type.tag === "ArrayType") {
+    if (ast.subject.type.tag === "VectorType") {
       ast.subject.addr = true;
     }
     else if (ast.subject.type.tag === "PointerType") {
@@ -223,7 +223,7 @@ function AnalyzeAddrReferences(ast) {
       }
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     if (ast.arguments.length === 0) {
     }
     else {

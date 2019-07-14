@@ -22,7 +22,7 @@ let Symtab = require("./Symtab.js");
 
 function width(type) {
   if      (type.tag === "StructType")   throw new Error("StructType does not have a data word width.");
-  else if (type.tag === "ArrayType")    throw new Error("ArrayType does not have a data word width.");
+  else if (type.tag === "VectorType")   throw new Error("VectorType does not have a data word width.");
   else if (type.tag === "FunctionType") return 64;
   else if (type.tag === "PointerType")  return 64;
   else if (type.tag === "IntegerType")  return type.width;
@@ -34,7 +34,7 @@ function width(type) {
 
 function size(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.size : type.size);
-  else if (type.tag === "ArrayType")    return type.count * size(type.element);
+  else if (type.tag === "VectorType")   return type.count * size(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -46,7 +46,7 @@ function size(type) {
 
 function align(type) {
   if      (type.tag === "StructType")   return type.align;
-  else if (type.tag === "ArrayType")    return align(type.element);
+  else if (type.tag === "VectorType")   return align(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -226,8 +226,8 @@ function GenerateAsm(ast, context) {
       if (type.tag === "StructType") {
         emitInitializer({ tag: "InitStructExpression", type: type, arguments: [] });
       }
-      else if (type.tag === "ArrayType") {
-        emitInitializer({ tag: "InitArrayExpression", type: type, arguments: [] });
+      else if (type.tag === "VectorType") {
+        emitInitializer({ tag: "InitVectorExpression", type: type, arguments: [] });
       }
       else if (type.tag === "FunctionType") {
         context.asm += `  .quad    0\n`;
@@ -271,7 +271,7 @@ function GenerateAsm(ast, context) {
           }
         }
       }
-      else if (value.tag === "InitArrayExpression") {
+      else if (value.tag === "InitVectorExpression") {
         if (value.arguments.length === 0) {
           for (let i = 0, c = value.arguments.length; i < c; i++) {
             emitZeroField(value.type.element);
@@ -363,7 +363,7 @@ function GenerateAsm(ast, context) {
         context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
         GenerateAsm(variable.value, context);
       }
-      else if (variable.type.tag === "ArrayType") {
+      else if (variable.type.tag === "VectorType") {
         variable.value.addroffset = variable.addroffset;
         variable.value.soffset    = 0;
         
@@ -530,7 +530,7 @@ function GenerateAsm(ast, context) {
           context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
           GenerateAsm(variable.value, context);
         }
-        else if (variable.type.tag === "ArrayType") {
+        else if (variable.type.tag === "VectorType") {
           variable.value.addroffset = variable.addroffset;
           variable.value.soffset    = 0;
           
@@ -591,8 +591,8 @@ function GenerateAsm(ast, context) {
     if (ast.type.tag === "StructType") {
       throw new Error(`Cannot return struct type.`);
     }
-    else if (ast.type.tag === "ArrayType") {
-      throw new Error(`Cannot return array type.`);
+    else if (ast.type.tag === "VectorType") {
+      throw new Error(`Cannot return vector type.`);
     }
     else if (ast.type.tag === "FunctionType") {
       GenerateAsm(ast.expression, context);
@@ -679,8 +679,8 @@ function GenerateAsm(ast, context) {
     if (ast.a.type.tag === "StructType") {
       throw new Error(`Cannot compare struct references.`);
     }
-    else if (ast.a.type.tag === "ArrayType") {
-      throw new Error(`Cannot compare array references.`);
+    else if (ast.a.type.tag === "VectorType") {
+      throw new Error(`Cannot compare vector references.`);
     }
     else if (ast.a.type.tag === "FunctionType") {
       GenerateAsm(ast.a, context);
@@ -1118,7 +1118,7 @@ function GenerateAsm(ast, context) {
       context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.value, context);
     }
-    else if (ast.type.tag === "ArrayType") {
+    else if (ast.type.tag === "VectorType") {
       ast.value.addroffset = ast.addroffset;
       ast.value.soffset    = 0;
       
@@ -1179,8 +1179,8 @@ function GenerateAsm(ast, context) {
       if (ast.type.tag === "StructType") {
         throw new Error(`Cannot load struct as value.`);
       }
-      else if (ast.type.tag === "ArrayType") {
-        throw new Error(`Cannot load array as value.`);
+      else if (ast.type.tag === "VectorType") {
+        throw new Error(`Cannot load vector as value.`);
       }
       else if (ast.type.tag === "FunctionType") {
         GenerateAsm(ast.subject, context);
@@ -1226,8 +1226,8 @@ function GenerateAsm(ast, context) {
       if (ast.type.tag === "StructType") {
         throw new Error(`Cannot load struct as value.`);
       }
-      else if (ast.type.tag === "ArrayType") {
-        throw new Error(`Cannot load array as value.`);
+      else if (ast.type.tag === "VectorType") {
+        throw new Error(`Cannot load vector as value.`);
       }
       else if (ast.type.tag === "FunctionType") {
         GenerateAsm(ast.subject, context);
@@ -1294,8 +1294,8 @@ function GenerateAsm(ast, context) {
       if (ast.type.tag === "StructType") {
         throw new Error(`Cannot load struct type as value.`);
       }
-      else if (ast.type.tag === "ArrayType") {
-        throw new Error(`Cannot load array type as value.`);
+      else if (ast.type.tag === "VectorType") {
+        throw new Error(`Cannot load vector type as value.`);
       }
       else if (ast.type.tag === "FunctionType") {
         GenerateAsm(ast.subject, context);
@@ -1358,8 +1358,8 @@ function GenerateAsm(ast, context) {
     if (ast.type.tag === "StructType") {
       throw new Error(`Function structure return types unsupported.`);
     }
-    else if (ast.type.tag === "ArrayType") {
-      throw new Error(`Function array return types unsupported.`);
+    else if (ast.type.tag === "VectorType") {
+      throw new Error(`Function vector return types unsupported.`);
     }
     else if (ast.type.tag === "FunctionType") {
       context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
@@ -1402,9 +1402,9 @@ function GenerateAsm(ast, context) {
           soffset: ast.soffset + f.offset
         }, context);
       }
-      else if (f.type.tag === "ArrayType") {
+      else if (f.type.tag === "VectorType") {
         GenerateAsm({
-          tag: "InitArrayExpression",
+          tag: "InitVectorExpression",
           type: f.type,
           arguments: [],
           addroffset: ast.addroffset,
@@ -1449,7 +1449,7 @@ function GenerateAsm(ast, context) {
         
         GenerateAsm(a, context);
       }
-      else if (f.type.tag === "ArrayType") {
+      else if (f.type.tag === "VectorType") {
         a.addroffset = ast.addroffset;
         a.soffset    = ast.soffset + f.offset;
         
@@ -1517,7 +1517,7 @@ function GenerateAsm(ast, context) {
       }
     }
   }
-  else if (ast.tag === "InitArrayExpression") {
+  else if (ast.tag === "InitVectorExpression") {
     if (ast.arguments.length === 0) {
       for (let i = 0, c = ast.type.count; i < c; i++) {
         let elemoffset = i * size(ast.type.element);
@@ -1531,9 +1531,9 @@ function GenerateAsm(ast, context) {
             soffset: ast.soffset + elemoffset
           }, context);
         }
-        else if (ast.type.element.tag === "ArrayType") {
+        else if (ast.type.element.tag === "VectorType") {
           GenerateAsm({
-            tag: "InitArrayExpression",
+            tag: "InitVectorExpression",
             type: ast.type.element,
             arguments: [],
             addroffset: ast.addroffset,
@@ -1582,7 +1582,7 @@ function GenerateAsm(ast, context) {
           
           GenerateAsm(a, context);
         }
-        else if (ast.type.element.tag === "ArrayType") {
+        else if (ast.type.element.tag === "VectorType") {
           a.addroffset = ast.addroffset;
           a.soffset    = ast.soffset + elemoffset;
           
