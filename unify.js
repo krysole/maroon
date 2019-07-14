@@ -24,6 +24,13 @@ function unify(a, b) {
     
     return a;
   }
+  else if (a.tag === "ArrayType" && b.tag === "ArrayType") {
+    unify(a.element, b.element);
+    
+    if (a.count !== b.count) throw new Error("Array count mismatch.");
+    
+    return a;
+  }
   else if (a.tag === "FunctionType" && b.tag === "FunctionType") {
     if (a.parameters.length !== b.parameters.length) throw new Error("Function arity mismatch.");
     for (let i = 0, c = a.parameters.length; i < c; i++) {
@@ -36,7 +43,7 @@ function unify(a, b) {
     return a;
   }
   else if (a.tag === "PointerType" && b.tag === "PointerType") {
-    unify(a.target, b.target);
+    unify(a.element, b.element);
     
     return a;
   }

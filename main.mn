@@ -19,6 +19,16 @@ fn main[]: halt {
     s <- s + a[i];
   }
   
+  let p <- ptr[a[5]];
+  
+  p <- ptr[p[]];
+  p <- ptr[p[0]];
+  p <- ptr[p[1]];
+  p <- ptr[p[-1]];
+  
+  printf["p[] -> %d\n", p[]];
+  printf["p[1] -> %d\n", p[1]];
+  printf["p[-1] -> %d\n", p[-1]];
   printf["sum of a[...] -> %d\n", s];
   
   exit[0];

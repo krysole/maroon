@@ -36,10 +36,8 @@ let InstallPlatform = module.exports = {
     Symtab.define(symtab, "u32", { tag: "IntegerType", width: 32, signed: false });
     Symtab.define(symtab, "u64", { tag: "IntegerType", width: 64, signed: false });
     
-    Symtab.define(symtab, "ref", { tag: "Primitive", name: "ref" });
-    Symtab.define(symtab, "ptr", { tag: "PointerType", target: null });
-    
-    Symtab.define(symtab, "array", { tag: "ArrayType", type: null, count: null });
+    Symtab.define(symtab, "ptr",   { tag: "PointerType", element: null });
+    Symtab.define(symtab, "array", { tag: "ArrayType",   element: null, count: null });
   },
   
 }

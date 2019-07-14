@@ -163,9 +163,6 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "PrefixExpression") {
     AnalyzeAddrReferences(ast.a);
   }
-  else if (ast.tag === "RefExpression") {
-    AnalyzeAddrReferences(ast.a);
-  }
   else if (ast.tag === "PtrExpression") {
     AnalyzeAddrReferences(ast.location);
     
@@ -192,22 +189,29 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "FieldExpression") {
     AnalyzeAddrReferences(ast.subject);
     
-    // Note: We don't actually need the subject to be a reference, since a
-    //       struct always has an address, just not an assignable address, and
-    //       we've already checked for that during type analysis.
-    
-    ast.subject.addr = true;
+    if (ast.subject.type.tag === "StructType") {
+      ast.subject.addr = true;
+    }
+    else {
+      throw new Error();
+    }
   }
   else if (ast.tag === "SubscriptExpression") {
     AnalyzeAddrReferences(ast.subject);
     AnalyzeAddrReferences(ast.index);
     
-    // NOTE We don't actually care if the subject is a proper reference and not
-    //      a temporary, just that it is addressable, and arrays always have a
-    //      root address that we can use. The ability to obtain a reference to
-    //      the result of a subscript is checked during type analysis.
-    
-    ast.subject.addr = true;
+    if (ast.subject.type.tag === "ArrayType") {
+      ast.subject.addr = true;
+    }
+    else if (ast.subject.type.tag === "PointerType") {
+      ast.subject.addr = false;
+    }
+    else {
+      throw new Error();
+    }
+  }
+  else if (ast.tag === "DereferenceExpression") {
+    AnalyzeAddrReferences(ast.subject);
   }
   else if (ast.tag === "CallExpression") {
     AnalyzeAddrReferences(ast.subject);

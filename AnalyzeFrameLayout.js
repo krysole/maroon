@@ -26,7 +26,7 @@ function pad(offset, alignment) {
 
 function align(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.align : type.align);
-  else if (type.tag === "ArrayType")    return align(type.type);
+  else if (type.tag === "ArrayType")    return align(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -38,7 +38,7 @@ function align(type) {
 
 function sizeof(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.size : type.size);
-  else if (type.tag === "ArrayType")    return type.count * sizeof(type.type);
+  else if (type.tag === "ArrayType")    return type.count * sizeof(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -146,7 +146,7 @@ function AnalyzeFrameLayout(ast, context) {
       {
         if (variable.type.tag === "StructType" || variable.type.tag === "ArrayType") {
           // Provide a pointer temporary to the struct or array variable.
-          let locationType = { tag: "PointerType", target: null };
+          let locationType = { tag: "PointerType", element: null };
           variable.addroffset = context.loffset + pad(context.loffset, align(locationType)) + sizeof(locationType);
           context.loffset     = variable.addroffset;
           context.lsize       = Math.max(context.lsize, context.loffset);
@@ -191,7 +191,7 @@ function AnalyzeFrameLayout(ast, context) {
         {
           if (variable.type.tag === "StructType" || variable.type.tag === "ArrayType") {
             // Provide a pointer temporary to the struct or array variable.
-            let locationType = { tag: "PointerType", target: null };
+            let locationType = { tag: "PointerType", element: null };
             variable.addroffset = context.loffset + pad(context.loffset, align(locationType)) + sizeof(locationType);
             context.loffset     = variable.addroffset;
             context.lsize       = Math.max(context.lsize, context.loffset);
@@ -363,22 +363,6 @@ function AnalyzeFrameLayout(ast, context) {
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
-  else if (ast.tag === "RefExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.a, context);
-    }
-    context.loffset = preservedloffset;
-    
-    if (ast.addr) {
-      // Just leave the address in a working register.
-    }
-    else {
-      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-      context.loffset = ast.loffset;
-      context.lsize   = Math.max(context.lsize, context.loffset);
-    }
-  }
   else if (ast.tag === "PtrExpression") {
     preservedloffset = context.loffset;
     {
@@ -439,6 +423,22 @@ function AnalyzeFrameLayout(ast, context) {
       context.loffset = ast.addroffset;
       context.lsize   = Math.max(context.lsize, context.loffset);
       AnalyzeFrameLayout(ast.index, context);
+    }
+    context.loffset = preservedloffset;
+    
+    if (ast.addr) {
+      // Just leave the address in a working register.
+    }
+    else {
+      ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+      context.loffset = ast.loffset;
+      context.lsize   = Math.max(context.lsize, context.loffset);
+    }
+  }
+  else if (ast.tag === "DereferenceExpression") {
+    preservedloffset = context.loffset;
+    {
+      AnalyzeFrameLayout(ast.subject, context);
     }
     context.loffset = preservedloffset;
     

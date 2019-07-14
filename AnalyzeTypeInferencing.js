@@ -300,22 +300,11 @@ function AnalyzeTypeInferencing(ast) {
     ast.type = ast.a.type;
     ast.ref  = false;
   }
-  else if (ast.tag === "RefExpression") {
-    AnalyzeTypeInferencing(ast.a);
-    
-    if (ast.a.type.tag === "PointerType") {
-      ast.type = ast.a.type.target;
-      ast.ref  = true;
-    }
-    else {
-      throw new Error(`Cannot reference non pointer type.`);
-    }
-  }
   else if (ast.tag === "PtrExpression") {
     AnalyzeTypeInferencing(ast.location);
     
     if (ast.location.ref) {
-      ast.type = { tag: "PointerType", target: ast.location.type };
+      ast.type = { tag: "PointerType", element: ast.location.type };
       ast.ref  = false;
     }
     else {
@@ -334,7 +323,6 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "SetExpression") {
     AnalyzeTypeInferencing(ast.location);
     AnalyzeTypeInferencing(ast.value);
-    
     
     if (ast.location.ref) {
       unify(ast.location.type, ast.value.type);
@@ -386,8 +374,19 @@ function AnalyzeTypeInferencing(ast) {
       };
     }
     
-    ast.type = ast.subject.type.type;
+    ast.type = ast.subject.type.element;
     ast.ref  = ast.subject.ref;
+  }
+  else if (ast.tag === "DereferenceExpression") {
+    AnalyzeTypeInferencing(ast.subject);
+    
+    if (ast.subject.type.tag === "PointerType") {
+      ast.type = ast.subject.type.element;
+      ast.ref  = true;
+    }
+    else {
+      throw new Error(`Cannot dereference non pointer type.`);
+    }
   }
   else if (ast.tag === "CallExpression") {
     AnalyzeTypeInferencing(ast.subject);
@@ -408,6 +407,21 @@ function AnalyzeTypeInferencing(ast) {
       
       ast.type = ast.subject.type.rtype;
       ast.ref  = false;
+    }
+    else if (ast.subject.type.tag === "PointerType") {
+      if (ast.arguments.length === 0) {
+        Object.transmute(ast, { tag: "DereferenceExpression", subject: ast.subject })
+        
+        AnalyzeTypeInferencing(ast);
+      }
+      else if (ast.arguments.length === 1) {
+        Object.transmute(ast, { tag: "SubscriptExpression", subject: ast.subject, index: ast.arguments[0] });
+        
+        AnalyzeTypeInferencing(ast);
+      }
+      else {
+        throw new Error("Expected pointer subscript to have zero or one arguments.");
+      }
     }
     else {
       throw new Error("Expected ArrayType or FunctionType as subject of call expression.");
@@ -449,7 +463,7 @@ function AnalyzeTypeInferencing(ast) {
     ast.ref = false;
   }
   else if (ast.tag === "StringLiteral") {
-    if (ast.type == null) ast.type = { tag: "PointerType", target: { tag: "IntegerType", width: 8, signed: true } };
+    if (ast.type == null) ast.type = { tag: "PointerType", element: { tag: "IntegerType", width: 8, signed: true } };
     ast.ref = false;
   }
   else if (ast.tag === "BooleanLiteral") {
@@ -457,7 +471,7 @@ function AnalyzeTypeInferencing(ast) {
     ast.ref = false;
   }
   else if (ast.tag === "NullPtrLiteral") {
-    if (ast.type == null) ast.type = { tag: "PointerType", target: null };
+    if (ast.type == null) ast.type = { tag: "PointerType", element: null };
     ast.ref = false;
   }
   

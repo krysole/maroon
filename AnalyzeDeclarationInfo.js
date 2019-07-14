@@ -212,9 +212,6 @@ function AnalyzeDeclarationInfo(ast, path) {
   else if (ast.tag === "PrefixExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
-  else if (ast.tag === "RefExpression") {
-    AnalyzeDeclarationInfo(ast.a);
-  }
   else if (ast.tag === "PtrExpression") {
   }
   else if (ast.tag === "LookupExpression") {
@@ -223,6 +220,9 @@ function AnalyzeDeclarationInfo(ast, path) {
     AnalyzeDeclarationInfo(ast.a);
   }
   else if (ast.tag === "FieldExpression") {
+    AnalyzeDeclarationInfo(ast.subject);
+  }
+  else if (ast.tag === "DereferenceExpression") {
     AnalyzeDeclarationInfo(ast.subject);
   }
   else if (ast.tag === "CallExpression") {

@@ -1,6 +1,7 @@
 TASKLIST
 
-- Replace ref[p] with p[] as described in the notes.
+- Rename and move PtrExpression to InitPointerExpression, putting it with the
+	other InitXExpression handlers.
 - Rename array to vector, on the basis that arrays are resizing from the 
 	perspective of most modern dynamic languages like Objective-C/Swift, JavaScript, 
 	Python and Ruby. Only C++ based languages seem to use the terms in reverse.
@@ -16,6 +17,11 @@ TASKLIST
 	of very large arrays without taking up executable space.
 - There should be a zero fill initialization for array locals that mirrors zero
 	initialization for globals, for consistency.
+
+- Implement bounds checking for array subscripting, since we know the bounds of
+	arrays directly. Obviously if the index is known to be within bounds then we
+	shouldn't generate a bounds check, so some direction should be possible during
+	analysis or via an annotation.
 
 - Implement automatic synthesis of provided methods like allocate for concrete
 	classes, or the class tag behaviors.

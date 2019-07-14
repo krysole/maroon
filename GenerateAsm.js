@@ -34,7 +34,7 @@ function width(type) {
 
 function size(type) {
   if      (type.tag === "StructType")   return (type.orig != null ? type.orig.size : type.size);
-  else if (type.tag === "ArrayType")    return type.count * size(type.type);
+  else if (type.tag === "ArrayType")    return type.count * size(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -46,7 +46,7 @@ function size(type) {
 
 function align(type) {
   if      (type.tag === "StructType")   return type.align;
-  else if (type.tag === "ArrayType")    return align(type.type);
+  else if (type.tag === "ArrayType")    return align(type.element);
   else if (type.tag === "FunctionType") return 8;
   else if (type.tag === "PointerType")  return 8;
   else if (type.tag === "IntegerType")  return type.width / 8;
@@ -274,7 +274,7 @@ function GenerateAsm(ast, context) {
       else if (value.tag === "InitArrayExpression") {
         if (value.arguments.length === 0) {
           for (let i = 0, c = value.arguments.length; i < c; i++) {
-            emitZeroField(value.type.type);
+            emitZeroField(value.type.element);
           }
         }
         else {
@@ -1051,50 +1051,6 @@ function GenerateAsm(ast, context) {
       throw new Error(`Cannot generate prefix operator for type ${ast.type.tag}.`);
     }
   }
-  else if (ast.tag === "RefExpression") {
-    if (ast.addr) {
-      GenerateAsm(ast.a, context);
-      context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-    }
-    else {
-      if (ast.type.tag === "StructType") {
-        throw new Error(`Cannot load struct type as value.`);
-      }
-      else if (ast.type.tag === "ArrayType") {
-        throw new Error(`Cannot load array type as value.`);
-      }
-      else if (ast.type.tag === "FunctionType") {
-        GenerateAsm(ast.a, context);
-        context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  (%rax), %rax\n`;
-        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-      }
-      else if (ast.type.tag === "PointerType") {
-        GenerateAsm(ast.a, context);
-        context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  (%rax), %rax\n`;
-        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-      }
-      else if (ast.type.tag === "IntegerType") {
-        let x = affix(width(ast.type));
-        let a = reg(width(ast.type), "rax");
-        
-        GenerateAsm(ast.a, context);
-        context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-        context.asm += `  mov${x}  (%rax), ${a}\n`;
-        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
-      }
-      else if (ast.type.tag === "BooleanType") {
-        GenerateAsm(ast.a, context);
-        context.asm += `  movq  -${ast.a.loffset}(%rbp), %rax\n`;
-        context.asm += `  movb  (%rax), %al\n`;
-        context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
-      }
-      else {
-        throw new Error(`Invalid value type ${ast.type.tag}.`);
-      }
-    }
-  }
   else if (ast.tag === "PtrExpression") {
     GenerateAsm(ast.location, context);
     context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
@@ -1153,7 +1109,6 @@ function GenerateAsm(ast, context) {
         context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
       }
       else {
-        console.dir(ast);
         throw new Error(`Unrecognized declaration kind ${ast.declaration.kind} for lookup.`);
       }
     }
@@ -1260,23 +1215,12 @@ function GenerateAsm(ast, context) {
     }
   }
   else if (ast.tag === "SubscriptExpression") {
-    // TODO Figure out how to check for negative indices when the index is a 
-    //      signed value, and abort the program as appropriate. Programmers can
-    //      of course simply avoid using signed numbers where reasonable to 
-    //      avoid the additional runtime check.
-    
-    // TODO Figure out how to do bounds checking where we aren't otherwise able
-    //      to determine that the index is a bounded integer that doesn't
-    //      required any bounds checking. Again programmers can arange their 
-    //      programs to ensure that a bounded integer is used to avoid checking.
-    
-    
     if (ast.addr) {
       GenerateAsm(ast.subject, context);
       context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
       GenerateAsm(ast.index, context);
       context.asm += `  movq  -${ast.index.loffset}(%rbp), %rax\n`;
-      context.asm += `  movq  $${size(ast.subject.type.type)}, %rdx\n`;
+      context.asm += `  movq  $${size(ast.subject.type.element)}, %rdx\n`;
       context.asm += `  mulq  %rdx\n`;
       context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
       context.asm += `  addq  %rdx, %rax\n`;
@@ -1294,7 +1238,7 @@ function GenerateAsm(ast, context) {
         context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
         GenerateAsm(ast.index, context);
         context.asm += `  movq  -${ast.index.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  $${size(ast.subject.type.type)}, %rdx\n`;
+        context.asm += `  movq  $${size(ast.subject.type.element)}, %rdx\n`;
         context.asm += `  mulq  %rdx\n`;
         context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  addq  %rdx, %rax\n`;
@@ -1306,7 +1250,7 @@ function GenerateAsm(ast, context) {
         context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
         GenerateAsm(ast.index, context);
         context.asm += `  movq  -${ast.index.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  $${size(ast.subject.type.type)}, %rdx\n`;
+        context.asm += `  movq  $${size(ast.subject.type.element)}, %rdx\n`;
         context.asm += `  mulq  %rdx\n`;
         context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  addq  %rdx, %rax\n`;
@@ -1321,7 +1265,7 @@ function GenerateAsm(ast, context) {
         context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
         GenerateAsm(ast.index, context);
         context.asm += `  movq  -${ast.index.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  $${size(ast.subject.type.type)}, %rdx\n`;
+        context.asm += `  movq  $${size(ast.subject.type.element)}, %rdx\n`;
         context.asm += `  mulq  %rdx\n`;
         context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  addq  %rdx, %rax\n`;
@@ -1333,10 +1277,54 @@ function GenerateAsm(ast, context) {
         context.asm += `  movq  %rax, -${ast.addroffset}(%rbp)\n`;
         GenerateAsm(ast.index, context);
         context.asm += `  movq  -${ast.index.loffset}(%rbp), %rax\n`;
-        context.asm += `  movq  $${size(ast.subject.type.type)}, %rdx\n`;
+        context.asm += `  movq  $${size(ast.subject.type.element)}, %rdx\n`;
         context.asm += `  mulq  %rdx\n`;
         context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
         context.asm += `  addq  %rdx, %rax\n`;
+        context.asm += `  movb  (%rax), %al\n`;
+        context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
+      }
+      else {
+        throw new Error(`Invalid value type ${ast.type.tag}.`);
+      }
+    }
+  }
+  else if (ast.tag === "DereferenceExpression") {
+    if (ast.addr) {
+      GenerateAsm(ast.subject, context);
+      context.asm += `  movq  -${ast.subject.loffset}(%rbp), %rax\n`;
+    }
+    else {
+      if (ast.type.tag === "StructType") {
+        throw new Error(`Cannot load struct type as value.`);
+      }
+      else if (ast.type.tag === "ArrayType") {
+        throw new Error(`Cannot load array type as value.`);
+      }
+      else if (ast.type.tag === "FunctionType") {
+        GenerateAsm(ast.subject, context);
+        context.asm += `  movq  -${ast.subject.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  (%rax), %rax\n`;
+        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.type.tag === "PointerType") {
+        GenerateAsm(ast.subject, context);
+        context.asm += `  movq  -${ast.subject.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  (%rax), %rax\n`;
+        context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.type.tag === "IntegerType") {
+        let x = affix(width(ast.type));
+        let a = reg(width(ast.type), "rax");
+        
+        GenerateAsm(ast.subject, context);
+        context.asm += `  movq  -${ast.subject.loffset}(%rbp), %rax\n`;
+        context.asm += `  mov${x}  (%rax), ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${ast.loffset}(%rbp)\n`;
+      }
+      else if (ast.type.tag === "BooleanType") {
+        GenerateAsm(ast.subject, context);
+        context.asm += `  movq  -${ast.subject.loffset}(%rbp), %rax\n`;
         context.asm += `  movb  (%rax), %al\n`;
         context.asm += `  movb  %al, -${ast.loffset}(%rbp)\n`;
       }
@@ -1536,47 +1524,47 @@ function GenerateAsm(ast, context) {
   else if (ast.tag === "InitArrayExpression") {
     if (ast.arguments.length === 0) {
       for (let i = 0, c = ast.type.count; i < c; i++) {
-        let elemoffset = i * size(ast.type.type);
+        let elemoffset = i * size(ast.type.element);
         
-        if (ast.type.type.tag === "StructType") {
+        if (ast.type.element.tag === "StructType") {
           GenerateAsm({
             tag: "InitStructExpression",
-            type: ast.type.type,
+            type: ast.type.element,
             arguments: [],
             addroffset: ast.addroffset,
             soffset: ast.soffset + elemoffset
           }, context);
         }
-        else if (ast.type.type.tag === "ArrayType") {
+        else if (ast.type.element.tag === "ArrayType") {
           GenerateAsm({
             tag: "InitArrayExpression",
-            type: ast.type.type,
+            type: ast.type.element,
             arguments: [],
             addroffset: ast.addroffset,
             soffset: ast.soffset + elemoffset
           }, context);
         }
-        else if (ast.type.type.tag === "FunctionType") {
+        else if (ast.type.element.tag === "FunctionType") {
           context.asm += `  xorq  %rax, %rax\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  movq  %rax, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "PointerType") {
+        else if (ast.type.element.tag === "PointerType") {
           context.asm += `  xorq  %rax, %rax\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  movq  %rax, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "IntegerType") {
-          let x = affix(width(ast.type.type));
-          let a = reg(width(ast.type.type), "rax");
+        else if (ast.type.element.tag === "IntegerType") {
+          let x = affix(width(ast.type.element));
+          let a = reg(width(ast.type.element), "rax");
           
           context.asm += `  xor${x}  ${a}, ${a}\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  mov${x}  ${a}, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "BooleanType") {
-          let x = affix(width(ast.type.type));
-          let a = reg(width(ast.type.type), "rax");
+        else if (ast.type.element.tag === "BooleanType") {
+          let x = affix(width(ast.type.element));
+          let a = reg(width(ast.type.element), "rax");
           
           context.asm += `  xor${x}  ${a}, ${a}\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
@@ -1589,34 +1577,34 @@ function GenerateAsm(ast, context) {
     }
     else {
       for (let i = 0, c = ast.arguments.length; i < c; i++) {
-        let elemoffset = i * size(ast.type.type);
+        let elemoffset = i * size(ast.type.element);
         let a          = ast.arguments[i];
         
-        if (ast.type.type.tag === "StructType") {
+        if (ast.type.element.tag === "StructType") {
           a.addroffset = ast.addroffset;
           a.soffset    = ast.soffset + elemoffset;
           
           GenerateAsm(a, context);
         }
-        else if (ast.type.type.tag === "ArrayType") {
+        else if (ast.type.element.tag === "ArrayType") {
           a.addroffset = ast.addroffset;
           a.soffset    = ast.soffset + elemoffset;
           
           GenerateAsm(a, context);
         }
-        else if (ast.type.type.tag === "FunctionType") {
+        else if (ast.type.element.tag === "FunctionType") {
           GenerateAsm(a, context);
           context.asm += `  movq  -${a.loffset}(%rbp), %rax\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  movq  %rax, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "PointerType") {
+        else if (ast.type.element.tag === "PointerType") {
           GenerateAsm(a, context);
           context.asm += `  movq  -${a.loffset}(%rbp), %rax\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  movq  %rax, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "IntegerType") {
+        else if (ast.type.element.tag === "IntegerType") {
           let s  = (a.type.signed ? "s" : "z");
           let xa = affix(width(a.type));
           let aa = reg(width(a.type), "rax");
@@ -1631,7 +1619,7 @@ function GenerateAsm(ast, context) {
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  mov${xf}  ${af}, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
-        else if (ast.type.type.tag === "BooleanType") {
+        else if (ast.type.element.tag === "BooleanType") {
           GenerateAsm(a, context);
           context.asm += `  movb  -${f.loffset}(%rbp), %al\n`;
           context.asm += `  movzbq %al, %rax\n`;

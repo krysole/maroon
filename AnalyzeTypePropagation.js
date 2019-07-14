@@ -178,13 +178,8 @@ function AnalyzeTypePropagation(ast, context) {
     
     AnalyzeTypePropagation(ast.a, context);
   }
-  else if (ast.tag === "RefExpression") {
-    ast.a.type.target = unify(ast.type, ast.a.type.target);
-    
-    AnalyzeTypePropagation(ast.a, context);
-  }
   else if (ast.tag === "PtrExpression") {
-    ast.location.type = unify(ast.type.target, ast.location.type);
+    ast.location.type = unify(ast.type.element, ast.location.type);
     
     AnalyzeTypePropagation(ast.location, context);
   }
@@ -202,6 +197,11 @@ function AnalyzeTypePropagation(ast, context) {
   else if (ast.tag === "SubscriptExpression") {
     AnalyzeTypePropagation(ast.subject, context);
     AnalyzeTypePropagation(ast.index, context);
+  }
+  else if (ast.tag === "DereferenceExpression") {
+    ast.subject.type.element = unify(ast.type, ast.subject.type.element);
+    
+    AnalyzeTypePropagation(ast.subject, context);
   }
   else if (ast.tag === "CallExpression") {
     if (ast.arguments.length < ast.subject.type.parameters.length) {
@@ -330,9 +330,6 @@ function AnalyzeTypePropagation(ast, context) {
   else if (ast.tag === "BooleanLiteral") {
   }
   else if (ast.tag === "NullPtrLiteral") {
-    if (ast.type.target == null) {
-      ast.type.target = { tag: "VoidType" };
-    }
   }
   
   

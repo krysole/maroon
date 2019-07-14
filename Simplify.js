@@ -45,7 +45,7 @@ function Simplify(ast, context) {
     Simplify(ast.rtype, context);
   }
   else if (ast.tag === "PointerType") {
-    Simplify(ast.target, context);
+    Simplify(ast.element, context);
   }
   else if (ast.tag === "IntegerType") {
   }
@@ -293,19 +293,6 @@ function Simplify(ast, context) {
       ast.value = ast.value.negated();
     }
   }
-  else if (ast.tag === "RefExpression") {
-    if (ast.a.tag === "PointerType") {
-      Object.transmute(ast, ast.a);
-      
-      Simplify(ast, context);
-    }
-    else if (ast.a.tag.match(/Type/)) {
-      throw new Error(`Cannot simplify ref expression over non pointer type.`);
-    }
-    else {
-      Simplify(ast.a, context);
-    }
-  }
   else if (ast.tag === "PtrExpression") {
     Simplify(ast.location, context);
   }
@@ -334,25 +321,15 @@ function Simplify(ast, context) {
     Simplify(ast.subject, context);
     Simplify(ast.index, context);
   }
+  else if (ast.tag === "DereferenceExpression") {
+    Simplify(ast.subject, context);
+  }
   else if (ast.tag === "CallExpression") {
     Simplify(ast.subject, context);
     
-    if (ast.subject.tag === "Primitive" && ast.subject.name === "ref") {
-      if (ast.arguments.length !== 1) {
-        throw new Error("ref primitive expects one argument");
-      }
-      
-      Object.transmute(ast, { tag: "RefExpression", a: ast.arguments[0] });
-      
-      Simplify(ast, context);
-    }
-    else if (ast.subject.tag === "PointerType") {
+    if (ast.subject.tag === "PointerType") {
       if (ast.arguments.length === 0) {
         Object.transmute(ast, { tag: "NullPtrLiteral", type: ast.subject });
-        
-        if (ast.target == null) {
-          ast.target = { tag: "VoidType" };
-        }
         
         Simplify(ast, context);
       }
@@ -403,7 +380,7 @@ function Simplify(ast, context) {
       
       if (!ast.arguments[0].tag.match(/Type/)) throw new Error(`Cannot specialize pointer type over non type parameter.`);
       
-      Object.transmute(ast, { tag: "PointerType", target: ast.arguments[0] });
+      Object.transmute(ast, { tag: "PointerType", element: ast.arguments[0] });
       
       Simplify(ast);
     }
@@ -413,19 +390,19 @@ function Simplify(ast, context) {
       }
       
       if (ast.arguments.length === 1 && ast.arguments[0].tag.match(/type/)) {
-        Object.transmute(ast, { tag: "ArrayType", type: ast.arguments[0], count: ast.subject.count });
+        Object.transmute(ast, { tag: "ArrayType", element: ast.arguments[0], count: ast.subject.count });
         
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 1 && ast.arguments[0].tag === "IntegerLiteral") {
-        Object.transmute(ast, { tag: "ArrayType", type: ast.subject.type, count: ast.arguments[0].value.toNumber() });
+        Object.transmute(ast, { tag: "ArrayType", element: ast.subject.type, count: ast.arguments[0].value.toNumber() });
         
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 2 &&
                ast.arguments[0].tag.match(/Type/) &&
                ast.arguments[1].tag === "IntegerLiteral") {
-        Object.transmute(ast, { tag: "ArrayType", type: ast.arguments[0], count: ast.arguments[1].value.toNumber() });
+        Object.transmute(ast, { tag: "ArrayType", element: ast.arguments[0], count: ast.arguments[1].value.toNumber() });
         
         Simplify(ast, context);
       }
