@@ -363,17 +363,6 @@ function AnalyzeFrameLayout(ast, context) {
     context.loffset = ast.loffset;
     context.lsize   = Math.max(context.lsize, context.loffset);
   }
-  else if (ast.tag === "PtrExpression") {
-    preservedloffset = context.loffset;
-    {
-      AnalyzeFrameLayout(ast.location, context);
-    }
-    context.loffset = preservedloffset;
-    
-    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
-    context.loffset = ast.loffset;
-    context.lsize   = Math.max(context.lsize, context.loffset);
-  }
   else if (ast.tag === "LookupExpression") {
     if (ast.addr) {
       // Just leave the address in a working register.
@@ -503,6 +492,17 @@ function AnalyzeFrameLayout(ast, context) {
       }
       context.loffset = preservedloffset;
     }
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    preservedloffset = context.loffset;
+    {
+      AnalyzeFrameLayout(ast.location, context);
+    }
+    context.loffset = preservedloffset;
+    
+    ast.loffset     = context.loffset + pad(context.loffset, align(ast.type)) + sizeof(ast.type);
+    context.loffset = ast.loffset;
+    context.lsize   = Math.max(context.lsize, context.loffset);
   }
 
 

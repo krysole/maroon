@@ -300,17 +300,6 @@ function AnalyzeTypeInferencing(ast) {
     ast.type = ast.a.type;
     ast.ref  = false;
   }
-  else if (ast.tag === "PtrExpression") {
-    AnalyzeTypeInferencing(ast.location);
-    
-    if (ast.location.ref) {
-      ast.type = { tag: "PointerType", element: ast.location.type };
-      ast.ref  = false;
-    }
-    else {
-      throw new Error(`Cannot get address of value, expected reference.`);
-    }
-  }
   else if (ast.tag === "LookupExpression") {
     if (ast.declaration.type != null) {
       ast.type = ast.declaration.type;
@@ -455,6 +444,17 @@ function AnalyzeTypeInferencing(ast) {
     }
     
     ast.ref = false;
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    AnalyzeTypeInferencing(ast.location);
+    
+    if (ast.location.ref) {
+      ast.type = { tag: "PointerType", element: ast.location.type };
+      ast.ref  = false;
+    }
+    else {
+      throw new Error(`Cannot get address of value, expected reference.`);
+    }
   }
   
   

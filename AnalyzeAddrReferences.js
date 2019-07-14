@@ -163,16 +163,6 @@ function AnalyzeAddrReferences(ast) {
   else if (ast.tag === "PrefixExpression") {
     AnalyzeAddrReferences(ast.a);
   }
-  else if (ast.tag === "PtrExpression") {
-    AnalyzeAddrReferences(ast.location);
-    
-    if (ast.location.ref) {
-      ast.location.addr = true;
-    }
-    else {
-      throw new Error(`Cannot return address of non reference location.`);
-    }
-  }
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
@@ -240,6 +230,16 @@ function AnalyzeAddrReferences(ast) {
       for (let a of ast.arguments) {
         AnalyzeAddrReferences(a);
       }
+    }
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    AnalyzeAddrReferences(ast.location);
+    
+    if (ast.location.ref) {
+      ast.location.addr = true;
+    }
+    else {
+      throw new Error(`Cannot return address of non reference location.`);
     }
   }
   

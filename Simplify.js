@@ -293,9 +293,6 @@ function Simplify(ast, context) {
       ast.value = ast.value.negated();
     }
   }
-  else if (ast.tag === "PtrExpression") {
-    Simplify(ast.location, context);
-  }
   else if (ast.tag === "LookupExpression") {
     ast.declaration = Symtab.lookup(context.scope, ast.name);
     
@@ -334,7 +331,7 @@ function Simplify(ast, context) {
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 1) {
-        Object.transmute(ast, { tag: "PtrExpression", location: ast.arguments[0], type: ast.subject });
+        Object.transmute(ast, { tag: "InitPointerExpression", location: ast.arguments[0], type: ast.subject });
         
         Simplify(ast, context);
       }
@@ -443,6 +440,9 @@ function Simplify(ast, context) {
     for (let a of ast.arguments) {
       Simplify(a, context);
     }
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    Simplify(ast.location, context);
   }
   
   

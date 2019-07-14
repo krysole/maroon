@@ -178,11 +178,6 @@ function AnalyzeTypePropagation(ast, context) {
     
     AnalyzeTypePropagation(ast.a, context);
   }
-  else if (ast.tag === "PtrExpression") {
-    ast.location.type = unify(ast.type.element, ast.location.type);
-    
-    AnalyzeTypePropagation(ast.location, context);
-  }
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
@@ -315,6 +310,11 @@ function AnalyzeTypePropagation(ast, context) {
         AnalyzeTypePropagation(a, context);
       }
     }
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    ast.location.type = unify(ast.type.element, ast.location.type);
+    
+    AnalyzeTypePropagation(ast.location, context);
   }
   
   

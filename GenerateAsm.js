@@ -1051,10 +1051,6 @@ function GenerateAsm(ast, context) {
       throw new Error(`Cannot generate prefix operator for type ${ast.type.tag}.`);
     }
   }
-  else if (ast.tag === "PtrExpression") {
-    GenerateAsm(ast.location, context);
-    context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
-  }
   else if (ast.tag === "LookupExpression") {
     if (ast.addr) {
       if (ast.declaration.kind === "ExternalFunction") {
@@ -1631,6 +1627,10 @@ function GenerateAsm(ast, context) {
         }
       }
     }
+  }
+  else if (ast.tag === "InitPointerExpression") {
+    GenerateAsm(ast.location, context);
+    context.asm += `  movq  %rax, -${ast.loffset}(%rbp)\n`;
   }
   
   

@@ -212,8 +212,6 @@ function AnalyzeDeclarationInfo(ast, path) {
   else if (ast.tag === "PrefixExpression") {
     AnalyzeDeclarationInfo(ast.a);
   }
-  else if (ast.tag === "PtrExpression") {
-  }
   else if (ast.tag === "LookupExpression") {
   }
   else if (ast.tag === "SetExpression") {
@@ -249,6 +247,8 @@ function AnalyzeDeclarationInfo(ast, path) {
     for (let a of ast.arguments) {
       AnalyzeDeclarationInfo(a);
     }
+  }
+  else if (ast.tag === "InitPointerExpression") {
   }
   
   

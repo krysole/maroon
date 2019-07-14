@@ -1,7 +1,5 @@
 TASKLIST
 
-- Rename and move PtrExpression to InitPointerExpression, putting it with the
-	other InitXExpression handlers.
 - Rename array to vector, on the basis that arrays are resizing from the 
 	perspective of most modern dynamic languages like Objective-C/Swift, JavaScript, 
 	Python and Ruby. Only C++ based languages seem to use the terms in reverse.
