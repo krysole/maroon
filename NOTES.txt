@@ -48,7 +48,7 @@ Multiary parameters allow an arbitrary number of strictly reference parameters
 to be provided to a method. Primitive types must use specialized method
 definitions directly, and cannot use generic method handlers, where multiary
 parameters are a way to access generic method parameters directly in a flexible
-and programatic fashion. These parameters can then be converted into a Vector
+and programatic fashion. These parameters can then be converted into a Array
 or other data structure if required, or could even be peeled of one by one
 while checking for the number of arguments actually provided per call.
 
@@ -99,7 +99,7 @@ class Object () {
   
 }
 
-class Vector (Object) {
+class Array (Object) {
   
   let count    <- nil;                 -- Variable with id type can be initialized
   let contents <- nil;                 -- using the nil default value.
@@ -367,7 +367,70 @@ On a minor side note, I wonder if the type parametricity can be unified between
 the gradual typing in Fluorite and the strictly compile time strategy required
 for a Rust style trait system.
 
-  
+
+---- Pointers and Pointer Arithmetic ----
+
+One of the interesting things about pointers in Maroon is that they are defined
+notationally as a parametric type just like vectors are. This means that
+while the semantics may be somewhat eccentric, the notation is quite consistant
+with the other types in the system.
+
+Remembering that the basic notation for generics and here specifically pointers
+is as follows.
+
+  let a <- i64[0]
+  let p <- ptr[a]
+  let x <- p[]
+
+This could have been done with something like ref[p] instead, but that isn't
+quite as consistent as an eccentric implementation of the Applicable trait.
+
+Basic pointer arithmetic then follows this notation by allowing an index to
+be provided that produces an offset equaling the index multiplied by the
+element size.
+
+  let v <- vec{i64}[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  let x <- p[10 - 1]
+
+Lastly we can use these like any other location, since the pointer was 
+originally a pointer anyway, we can of course compute any arithmetic back to
+another pointer.
+
+  ptr[p[10 - 1]]
+
+The only thing I'm not yet sure about, is whether I should support a feature
+that allows arithmetic directly with pointer values. For example, should it
+be possible to apply the + operator over a pointer and integer.
+
+  p <- p + (10 - 1)
+  p <- (10 - 1) + p
+
+This would theoretically work just fine, and many kinds of mathematics are not
+inherently commutative when applying some operators over certain type 
+combinations. This isn't really any different than addition over scaler/matrix
+or scaler/vector operands in linear algebra.
+
+For now I'm thinking that since supporting linear algebra style operations is
+more or less intended at some point anyway, and type promoting operations like
+this are not generally expected to follow the laws of commutativity anyway, 
+we can just deal with it. The reason for this note then is partly because this, 
+like linear algebra imposes a constraint on the arithmetic traits that define
+the operators.
+
+This could be implemented using a template that synthesises instances of the
+infix(+) operator as required, converting the code to the built in style
+automatically.
+
+  template{T}
+  inline infix(+)[a: ptr{T}, b: i64] do ptr[a[b]]
+
+This might be preferable to trying to do some special compiler functionality, 
+since we'll need some sort of operator function overloading anyway at some
+point, and in fact, it may be useful to be able to define all of the built in
+functions in a similar fashion, seperating out the cases in the compiler for
+code generation.
+
+
 ---- macOS x86-64 Calling Convention Notes ----
 
   * rdx:rax is return value.

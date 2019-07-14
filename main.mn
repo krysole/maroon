@@ -2,8 +2,8 @@
 -- Test program.
 --
 
-fn printf[string: [i8], ...]: i32;
-fn puts[string: [i8]]: i32;
+fn printf[string: ptr{i8}, ...]: i32;
+fn puts[string: ptr{i8}]: i32;
 fn exit[exit_code: i32]: halt;
 
 fn main[]: halt {

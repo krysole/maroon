@@ -318,23 +318,6 @@ grammar Parser {
     ;
   
   
-  type
-    = primaryType:t
-      ( p("[")              p("]") !{ tag: "ArrayType", type: t, count: null }:t
-      | p("[") expression:a p("]") !{ tag: "ArrayType", type: t, count: a }:t
-      )*
-      !t
-    ;
-  primaryType
-    = p("[") p("(") ( parameter ; p(",") )*:ps p(")") p(":") type:r p("]")
-      !{ tag: "FunctionType", parameters: ps, rtype: r }
-    | p("[") type:t p("]")
-      !{ tag: "PointerType", target: t }
-    | local:n
-      !{ tag: "LookupExpression", name: n }
-    ;
-  
-  
   variable
     = local:n p("<-") expression:e
       !{ tag: "VariableDeclaration", name: n, value: e }
@@ -366,8 +349,13 @@ grammar Parser {
       !{ tag: "ExpressionStatement", expression: e }:s
       !{ tag: "Block", statements: [s] }
     ;
-    
-    
+  
+  
+  type
+    = secondaryExpression
+    ;
+  
+  
   parameter
     = local:n p(":") type:t
       !{ tag: "Parameter", name: n, type: t }

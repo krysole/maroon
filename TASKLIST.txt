@@ -1,5 +1,12 @@
 TASKLIST
 
+- Replace ref[p] with p[] as described in the notes.
+- Rename array to vector, on the basis that arrays are resizing from the 
+	perspective of most modern dynamic languages like Objective-C/Swift, JavaScript, 
+	Python and Ruby. Only C++ based languages seem to use the terms in reverse.
+	Vectors would be fixed length and intended to be used to improve the performance
+	of mathematical vector calculations, or other fixed count arrays.
+
 - Initialization of array null initialization should be based on a proper loop and
 	not an unrolled loop. Otherwise large arrays would be uninitializable for the
 	most part (without excessive codegen).
@@ -12,8 +19,10 @@ TASKLIST
 
 - Implement automatic synthesis of provided methods like allocate for concrete
 	classes, or the class tag behaviors.
-- Implement code generation for Fluorite classes, without real garbage collection 
-  for now. Just require methods initially.
+- Implement code generation for Fluorite methods. This will require some changes
+	to frame layout, to support the GC frame link and GC id count. Perhaps a 
+	separate frame layout style would make sense, one that isn't based on fixed
+	frame size, but instead does allow for the stack to grow and shrink.
 - Implement fluorite_class_data generation for classes.
 - Update method code generation to at least ensure that the managed references
 	are stored in the stack frame separately from other stack frame data, and that
