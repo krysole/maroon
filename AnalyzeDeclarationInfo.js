@@ -114,9 +114,7 @@ function AnalyzeDeclarationInfo(ast, path) {
   }
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
-      if (variable.value != null) {
-        AnalyzeDeclarationInfo(variable.value);
-      }
+      AnalyzeDeclarationInfo(variable.value);
       
       variable.kind = "LocalVariable";
     }
@@ -139,6 +137,20 @@ function AnalyzeDeclarationInfo(ast, path) {
   else if (ast.tag === "DoWhileStatement") {
     AnalyzeDeclarationInfo(ast.body);
     AnalyzeDeclarationInfo(ast.condition);
+  }
+  else if (ast.tag === "ForStatement") {
+    for (let variable of ast.variables) {
+      AnalyzeDeclarationInfo(variable.value);
+      
+      variable.kind = "LocalVariable";
+    }
+    for (let condition of ast.conditions) {
+      AnalyzeDeclarationInfo(condition);
+    }
+    for (let increment of ast.increments) {
+      AnalyzeDeclarationInfo(increment);
+    }
+    AnalyzeDeclarationInfo(ast.body);
   }
   else if (ast.tag === "BreakStatement") {
   }
@@ -231,6 +243,11 @@ function AnalyzeDeclarationInfo(ast, path) {
       for (let a of ast.arguments) {
         AnalyzeDeclarationInfo(a);
       }
+    }
+  }
+  else if (ast.tag === "InitArrayExpression") {
+    for (let a of ast.arguments) {
+      AnalyzeDeclarationInfo(a);
     }
   }
   

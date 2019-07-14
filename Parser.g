@@ -87,6 +87,8 @@ grammar Parser {
     | untilStatement
     | doWhileStatement
     | doUntilStatement
+    | forStatement
+    // | forInStatement
     | breakStatement
     | continueStatement
     | returnStatement
@@ -150,6 +152,21 @@ grammar Parser {
       id("until") expression:c p(";")
       !{ tag: "DoWhileStatement", negated: true, condition: c, body: b }
     ;
+  
+  forStatement
+    = id("for")
+      ( variable ; p(",") )+:vs p(";")
+      ( expression ; p(",") )+:cs p(";")
+      ( expression ; p(",") )+:is
+      ( id("do") statement:b | block:b )
+      !{ tag: "ForStatement", variables: vs, conditions: cs, increments: is, body: b }
+    ;
+  
+  forInStatement
+    = id("for") local:n id("in") expression:e ( id("do") statement:b | block:b )
+      !{ tag: "ForStatement", name: n, subject: e, body: b }
+    ;
+      
   
   breakStatement
     = id("break") p(";")
@@ -286,6 +303,11 @@ grammar Parser {
     
     | local:n !{ tag: "LookupExpression", name: n }
     
+    // | p("[") expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", initial: { closed: i }, final: { closed: f } }
+    // | p("[") expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", initial: { closed: i }, final: { open:   f } }
+    // | p("(") expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", initial: { open:   i }, final: { closed: f } }
+    // | p("(") expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", initial: { open:   i }, final: { open:   f } }
+    
     | binintLiteral
     | octintLiteral
     | decintLiteral
@@ -419,7 +441,7 @@ grammar Parser {
         "label", "let",
         "if", "unless",
         "once", "forever", 
-        "while", "until", "repeat",
+        "while", "until", "repeat", "for", "in",
         "break", "continue", 
         "return", 
         "goto",

@@ -60,9 +60,7 @@ function AnalyzeTypePropagation(ast, context) {
   }
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
-      if (variable.value != null) {
-        AnalyzeTypePropagation(variable.value, context);
-      }
+      AnalyzeTypePropagation(variable.value, context);
     }
   }
   else if (ast.tag === "IfStatement") {
@@ -83,6 +81,18 @@ function AnalyzeTypePropagation(ast, context) {
   else if (ast.tag === "DoWhileStatement") {
     AnalyzeTypePropagation(ast.body, context);
     AnalyzeTypePropagation(ast.condition, context);
+  }
+  else if (ast.tag === "ForStatement") {
+    for (let variable of ast.variables) {
+      AnalyzeTypePropagation(variable.value, context);
+    }
+    for (let condition of ast.conditions) {
+      AnalyzeTypePropagation(condition, context);
+    }
+    for (let increment of ast.increments) {
+      AnalyzeTypePropagation(increment, context);
+    }
+    AnalyzeTypePropagation(ast.body, context);
   }
   else if (ast.tag === "BreakStatement") {
   }

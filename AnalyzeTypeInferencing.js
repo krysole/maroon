@@ -63,12 +63,10 @@ function AnalyzeTypeInferencing(ast) {
   }
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
-      if (variable.value != null) {
-        AnalyzeTypeInferencing(variable.value);
-        
-        variable.type = variable.value.type;
-        variable.ref  = true;
-      }
+      AnalyzeTypeInferencing(variable.value);
+      
+      variable.type = variable.value.type;
+      variable.ref  = true;
     }
   }
   else if (ast.tag === "IfStatement") {
@@ -89,6 +87,21 @@ function AnalyzeTypeInferencing(ast) {
   else if (ast.tag === "DoWhileStatement") {
     AnalyzeTypeInferencing(ast.body);
     AnalyzeTypeInferencing(ast.condition);
+  }
+  else if (ast.tag === "ForStatement") {
+    for (let variable of ast.variables) {
+      AnalyzeTypeInferencing(variable.value);
+      
+      variable.type = variable.value.type;
+      variable.ref  = true;
+    }
+    for (let condition of ast.conditions) {
+      AnalyzeTypeInferencing(condition);
+    }
+    for (let increment of ast.increments) {
+      AnalyzeTypeInferencing(increment);
+    }
+    AnalyzeTypeInferencing(ast.body);
   }
   else if (ast.tag === "BreakStatement") {
   }

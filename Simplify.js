@@ -154,6 +154,21 @@ function Simplify(ast, context) {
     Simplify(ast.body, context);
     Simplify(ast.condition, context);
   }
+  else if (ast.tag === "ForStatement") {
+    ast.conditions = ast.conditions.map(c => ConvertCondition(c));
+    
+    ast.parent = context.scope;
+    ast.decls  = {};
+    
+    for (let v of ast.variables) {
+      ast.decls[v.name] = v;
+    }
+    
+    for (let v of ast.variables)  Simplify(v.value, { unit: context.unit, function: context.function, scope: ast });
+    for (let c of ast.conditions) Simplify(c,       { unit: context.unit, function: context.function, scope: ast });
+    for (let i of ast.increments) Simplify(i,       { unit: context.unit, function: context.function, scope: ast });
+    Simplify(ast.body, { unit: context.unit, function: context.function, scope: ast })
+  }
   else if (ast.tag === "BreakStatement") {
   }
   else if (ast.tag === "ContinueStatement") {

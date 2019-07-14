@@ -83,6 +83,18 @@ function AnalyzeAddrReferences(ast) {
     AnalyzeAddrReferences(ast.body);
     AnalyzeAddrReferences(ast.condition);
   }
+  else if (ast.tag === "ForStatement") {
+    for (let variable of ast.variables) {
+      AnalyzeAddrReferences(variable.value);
+    }
+    for (let condition of ast.conditions) {
+      AnalyzeAddrReferences(condition);
+    }
+    for (let increment of ast.increments) {
+      AnalyzeAddrReferences(increment);
+    }
+    AnalyzeAddrReferences(ast.body);
+  }
   else if (ast.tag === "BreakStatement") {
   }
   else if (ast.tag === "ContinueStatement") {

@@ -273,6 +273,100 @@ support type messages directly, so the remote object bridge must implement
 type compatability to bridge class tags between the two environments in order 
 to function correctly.
 
+
+---- Enumeration in Maroon and Fluorite ----
+
+Enumeration is a slightly tricky concept, most of the time in Fluorite being
+done with procs, but sometimes it must be fast or when written in Maroon, must
+be implemented using plain data.
+
+To make this work, my current thinking is that something similar to Rust's
+traits might work reasonably well, specifically focussing on providing a trait
+for a struct that is returned by a enumerate function, or simply by directly
+supporting certain built in types directly.
+
+One example of this might be an interval trait, which could support an enumerable
+trait, which in turn could suppport the enumerator trait, which then provides
+the functions that implement each of the methods like init, condition, iterate.
+These functions are obviously just modelled on standard enumeration in C.
+
+Given that this is a fairly straightforward concept, my current thinking is 
+that it would be useful to consider providing a interim feature that implements
+the common cases directly in the compiler, until traits are implemented. This
+interim feature would work on compiler recognized constructs like interval
+expressions, and domain primitive calls on arrays or similar.
+
+  for i in [0..9] {...}
+  for i in domain[my_array] {...}
+  for e in my_array
+
+The latter avoids the issue of not having proper dot operators yet. If I can
+get a proper dot operator working then the following would probably also work.
+
+  for i in my_array.domain {...}
+
+The one problem I see immediately is that the above is still just a shorthand
+for proper traits, and therefore also for proper enumerators. Some enumerators
+therefore cannot be constructed in this way properly. For example, it should be
+possible to partially evaluate even some Fluorite code by making standardized
+assumptions in the compiler about the implementation of certain types. Intervals
+could fit into this and that would allow for more complex intervals to be
+constructed.
+
+  for i in [0..9].step(2) {...}
+
+This does not require construction of an Interval instance, but can instead
+simply construct an Interval struct. The struct must obviously be named something
+other than Interval, but since we're more or less just computing the enumerator
+here, we could view this as partially evaluating enumerate, and having it return
+a struct, which would then do what we're expecting.
+
+Basically, there would be two enumerate methods, one that returns an appropriate
+Enumerator class instance, and one that returns an appropriate Enumerator trait 
+instance. Again the names conflict here but we can possibly deal with that by
+naming one Iterator or something.
+
+Given all of the above, the implementation would have to either be very specific
+to the cases given above, or would probably have to have full support for both
+some kind of namespaces to deal with the name collisions as well as some kind
+of Rust like trait system. Anything less would likely not fully support all
+kinds of basic enumeration behavior, and we would likely still require some
+degree of real general use enumeration support anyway.
+
+My current thinking is that we should probably support a conventional for loop
+regardless of any of the above, and the benefits that proper enumerators may
+bring to the table, simply because they can provide case be case support for
+code that has yet to gain an Enumerator/Enumerable trait to support it.
+
+
+---- Namespaces ----
+
+I'm not yet sure if namespaces are really required for either Maroon or 
+Fluorite.
+
+In Fluorite, they don't really make sense since the object capability model is
+used to separate modules from one another. All symbols are explicitly pulled
+into scope using import statements at the top of a Fluorite module.
+
+In some sense Fluorite modules may require some kind of pattern inclusion of
+Maroon/C symbols to allow things like OpenGL or SDL to be quickly and
+effectively pulled into scope. This would then allow those functions or types
+to be referred to relatively straightforwardly, but as a rule arbitrary use
+of global names would interfere with local messages, since only names that
+are not in lexical scope are sent to the local private interface.
+
+A more general prefix could be used to allow accessing the complete Maroon/C
+namespace when it is required. Something like mn.glVertex3f or something.
+
+In Maroon on the other hand, the design I'm currently considering is to use
+some combination of C compatability, which will make the bridge with Fluorite
+a little simpler also, combined with features like Rust's traits to facilitate
+type parametricity and generic functions.
+
+On a minor side note, I wonder if the type parametricity can be unified between
+the gradual typing in Fluorite and the strictly compile time strategy required
+for a Rust style trait system.
+
   
 ---- macOS x86-64 Calling Convention Notes ----
 

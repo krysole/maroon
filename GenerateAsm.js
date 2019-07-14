@@ -355,49 +355,47 @@ function GenerateAsm(ast, context) {
   }
   else if (ast.tag === "LetStatement") {
     for (let variable of ast.variables) {
-      if (variable.value != null) {
-        if (variable.type.tag === "StructType") {
-          variable.value.addroffset = variable.addroffset;
-          variable.value.soffset    = 0;
-          
-          context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
-          GenerateAsm(variable.value, context);
-        }
-        else if (variable.type.tag === "ArrayType") {
-          variable.value.addroffset = variable.addroffset;
-          variable.value.soffset    = 0;
-          
-          context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
-          GenerateAsm(variable.value, context);
-        }
-        else if (variable.type.tag === "FunctionType") {
-          GenerateAsm(variable.value, context);
-          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
-        }
-        else if (variable.type.tag === "PointerType") {
-          GenerateAsm(variable.value, context);
-          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
-          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
-        }
-        else if (variable.type.tag === "IntegerType") {
-          let x = affix(width(variable.type));
-          let a = reg(width(variable.type), "rax");
-          
-          GenerateAsm(variable.value, context);
-          context.asm += `  mov${x}  -${variable.value.loffset}(%rbp), ${a}\n`;
-          context.asm += `  mov${x}  ${a}, -${variable.loffset}(%rbp)\n`;
-        }
-        else if (variable.type.tag === "BooleanType") {
-          GenerateAsm(variable.value, context);
-          context.asm += `  movb  -${variable.value.loffset}(%rbp), %al\n`;
-          context.asm += `  movb  %al, -${variable.loffset}(%rbp)\n`;
-        }
-        else {
-          throw new Error(`Invalid field type ${variable.type.tag}.`);
-        }
+      if (variable.type.tag === "StructType") {
+        variable.value.addroffset = variable.addroffset;
+        variable.value.soffset    = 0;
+        
+        context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
+        GenerateAsm(variable.value, context);
+      }
+      else if (variable.type.tag === "ArrayType") {
+        variable.value.addroffset = variable.addroffset;
+        variable.value.soffset    = 0;
+        
+        context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
+        GenerateAsm(variable.value, context);
+      }
+      else if (variable.type.tag === "FunctionType") {
+        GenerateAsm(variable.value, context);
+        context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
+      }
+      else if (variable.type.tag === "PointerType") {
+        GenerateAsm(variable.value, context);
+        context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+        context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
+      }
+      else if (variable.type.tag === "IntegerType") {
+        let x = affix(width(variable.type));
+        let a = reg(width(variable.type), "rax");
+        
+        GenerateAsm(variable.value, context);
+        context.asm += `  mov${x}  -${variable.value.loffset}(%rbp), ${a}\n`;
+        context.asm += `  mov${x}  ${a}, -${variable.loffset}(%rbp)\n`;
+      }
+      else if (variable.type.tag === "BooleanType") {
+        GenerateAsm(variable.value, context);
+        context.asm += `  movb  -${variable.value.loffset}(%rbp), %al\n`;
+        context.asm += `  movb  %al, -${variable.loffset}(%rbp)\n`;
+      }
+      else {
+        throw new Error(`Invalid field type ${variable.type.tag}.`);
       }
     }
   }
@@ -494,6 +492,90 @@ function GenerateAsm(ast, context) {
       context.asm += `LABEL__${context.fn.name}__${bodyLabel}:\n`;
       GenerateAsm(ast.body, context);
       GenerateAsm(ast.condition, context);
+      context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
+    }
+    context.continueLabel = preservedContinueLabel;
+    context.breakLabel    = preservedBreakLabel;
+  }
+  else if (ast.tag === "ForStatement") {
+    let condLabel = context.label++;
+    let bodyLabel = context.label++;
+    let incrLabel = context.label++;
+    let nextLabel = context.label++;
+    
+    if (ast.conditions.length >= 1) {
+      ast.conditions[0].label = condLabel;
+    }
+    for (let i = 1, c = ast.conditions.length; i < c; i++) {
+      ast.conditions[i].label = context.label++;
+    }
+    for (let i = 0, c = ast.conditions.length; i < c; i++) {
+      ast.conditions[i].thenLabel = ast.conditions[i].label;
+      ast.conditions[i].elseLabel = nextLabel;
+    }
+    if (ast.conditions.length >= 1) {
+      ast.conditions[ast.conditions.length - 1].thenLabel = bodyLabel;
+      ast.conditions[ast.conditions.length - 1].elseLabel = nextLabel;
+    }
+    
+    let preservedContinueLabel = context.continueLabel; context.continueLabel = incrLabel;
+    let preservedBreakLabel    = context.breakLabel;    context.breakLabel    = nextLabel;
+    {
+      for (let variable of ast.variables) {
+        if (variable.type.tag === "StructType") {
+          variable.value.addroffset = variable.addroffset;
+          variable.value.soffset    = 0;
+          
+          context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
+          GenerateAsm(variable.value, context);
+        }
+        else if (variable.type.tag === "ArrayType") {
+          variable.value.addroffset = variable.addroffset;
+          variable.value.soffset    = 0;
+          
+          context.asm += `  leaq  -${variable.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.addroffset}(%rbp)\n`;
+          GenerateAsm(variable.value, context);
+        }
+        else if (variable.type.tag === "FunctionType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
+        }
+        else if (variable.type.tag === "PointerType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movq  -${variable.value.loffset}(%rbp), %rax\n`;
+          context.asm += `  movq  %rax, -${variable.loffset}(%rbp)\n`;
+        }
+        else if (variable.type.tag === "IntegerType") {
+          let x = affix(width(variable.type));
+          let a = reg(width(variable.type), "rax");
+          
+          GenerateAsm(variable.value, context);
+          context.asm += `  mov${x}  -${variable.value.loffset}(%rbp), ${a}\n`;
+          context.asm += `  mov${x}  ${a}, -${variable.loffset}(%rbp)\n`;
+        }
+        else if (variable.type.tag === "BooleanType") {
+          GenerateAsm(variable.value, context);
+          context.asm += `  movb  -${variable.value.loffset}(%rbp), %al\n`;
+          context.asm += `  movb  %al, -${variable.loffset}(%rbp)\n`;
+        }
+        else {
+          throw new Error(`Invalid field type ${variable.type.tag}.`);
+        }
+      }
+      for (let condition of ast.conditions) {
+        context.asm += `LABEL__${context.fn.name}__${condition.label}:\n`;
+        GenerateAsm(condition, context);
+      }
+      context.asm += `LABEL__${context.fn.name}__${bodyLabel}:\n`;
+      GenerateAsm(ast.body, context);
+      context.asm += `LABEL__${context.fn.name}__${incrLabel}:\n`;
+      for (let increment of ast.increments) {
+        GenerateAsm(increment, context);
+      }
+      context.asm += `  jmp   LABEL__${context.fn.name}__${condLabel}\n`;
       context.asm += `LABEL__${context.fn.name}__${nextLabel}:\n`;
     }
     context.continueLabel = preservedContinueLabel;
@@ -625,9 +707,9 @@ function GenerateAsm(ast, context) {
       
       GenerateAsm(ast.a, context);
       GenerateAsm(ast.b, context);
-      context.asm += `mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
-      context.asm += `mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
-      context.asm += `cmp${x}  ${b}, ${a}\n`;
+      context.asm += `  mov${x}  -${ast.a.loffset}(%rbp), ${a}\n`;
+      context.asm += `  mov${x}  -${ast.b.loffset}(%rbp), ${b}\n`;
+      context.asm += `  cmp${x}  ${b}, ${a}\n`;
       context.asm += `  ${jmp(ast.o, false)}   LABEL__${context.fn.name}__${ast.thenLabel}\n`;
       context.asm += `  jmp   LABEL__${context.fn.name}__${ast.elseLabel}\n`;
     }
@@ -1485,16 +1567,16 @@ function GenerateAsm(ast, context) {
           context.asm += `  movq  %rax, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
         else if (ast.type.type.tag === "IntegerType") {
-          let x = affix(f.space * 8);
-          let a = reg(f.space * 8, "rax");
+          let x = affix(width(ast.type.type));
+          let a = reg(width(ast.type.type), "rax");
           
           context.asm += `  xor${x}  ${a}, ${a}\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;
           context.asm += `  mov${x}  ${a}, ${ast.soffset + elemoffset}(%rdx)\n`;
         }
         else if (ast.type.type.tag === "BooleanType") {
-          let x = affix(f.space * 8);
-          let a = reg(f.space * 8, "rax");
+          let x = affix(width(ast.type.type));
+          let a = reg(width(ast.type.type), "rax");
           
           context.asm += `  xor${x}  ${a}, ${a}\n`;
           context.asm += `  movq  -${ast.addroffset}(%rbp), %rdx\n`;

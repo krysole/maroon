@@ -1,15 +1,25 @@
 TASKLIST
 
-- Implement va parameter primitive functions.
-- Design and implement for loop/enumeration.
-- Implement interval support for enumeration, but not interval objects yet.
+- Initialization of array null initialization should be based on a proper loop and
+	not an unrolled loop. Otherwise large arrays would be uninitializable for the
+	most part (without excessive codegen).
+- Initialization of global array with null initialization should probably allow
+	for zero cleared initialization as required.
+- There should be a zero fill initialization for array globals, for fast allocation
+	of very large arrays without taking up executable space.
+- There should be a zero fill initialization for array locals that mirrors zero
+	initialization for globals, for consistency.
 
-- Implement code generation, without real garbage collection for now, for
-	methods.
+- Implement automatic synthesis of provided methods like allocate for concrete
+	classes, or the class tag behaviors.
+- Implement code generation for Fluorite classes, without real garbage collection 
+  for now. Just require methods initially.
 - Implement fluorite_class_data generation for classes.
 - Update method code generation to at least ensure that the managed references
 	are stored in the stack frame separately from other stack frame data, and that
 	they are at the beginning of the frame, along with a 32 bit count field and 
 	managed frame link field as an offset rather than a pointer.
+- Implement va varargs primitive functions for methods.
 
 - Continue analyzing the design and tasks for The Fluorite Programming Language.
+- Consider changing IntegerLiteral et cetera, into IntegerExpression et cetera.
