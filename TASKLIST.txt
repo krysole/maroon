@@ -1,5 +1,29 @@
 TASKLIST
 
+- Implement DWARF information that is more or less C compatible and can be used
+	by LLDB to effectively debug a Maroon program. This will likely be required
+	for some bugs before a Fluorite compatible debugger is written so I might
+	as well just implement it sooner rather than later.
+	This will also allow me to avoid having to necessarily dip into C to write
+	the runtime for Fluorite, allowing me to more fully test out the systems 
+	language and compiler.
+	
+- First, I need to get a lexer that can handle the source code properly.
+- Secondly, get the parser reading tokens rather than raw text, although I don't
+	intend to change the output right away.
+- Third, since I'm at it anyway, I might as well implement the layout rules.
+- Fouth, start propagating tokens into the ast as source information from the parser.
+- Fifth, rework the simplifier and type analysis to propagate source information
+	during any rewriting.
+- Sixth, source information in hand, generate the DWARF for functions.
+- Seventh, generate DWARF for line versus instructions.
+- Eighth, generate and test DWARF/CFI for function backtraces in lldb and
+	line by line debugging, et cetera.
+- Ninth, generate and test DWARF for global variables.
+- Tenth, generate and test DWARF for local variables.
+- Eleventh, generate DWARF for struct definitions.
+
+
 - Initialization of array null initialization should be based on a proper loop and
 	not an unrolled loop. Otherwise large arrays would be uninitializable for the
 	most part (without excessive codegen).

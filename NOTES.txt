@@ -431,6 +431,64 @@ functions in a similar fashion, seperating out the cases in the compiler for
 code generation.
 
 
+---- Random Number Generation ----
+
+This is a note that is more or less for later reference, but there are three
+main forms of random number generation theory, as I understand it. Psuedo
+Random Number Generation, Entropy Collection and Normalization, and Cryptographic
+Theory and Practice.
+
+The latter is probably best left up to a cryptographic library maintained by
+someone who is an expert in that area, probably even just a wrapper around an
+existing C library that already exists and is provided by platform vendors.
+
+The first two however, are somewhat more interesting.
+
+There is some somewhat interesting PRNG work called Permuted Linear Congruential
+Generation, or PCG for short. This work from what I understand supercedes all
+conventional fast PRNG systems while remaining uniform and generating all values.
+It has the properties typically expected of a PRNG family for general use in
+a high level language.
+
+At the moment I'm not particularly familiar with the strategies for dealing with
+entropy, except that most forms of entropy suffer from non uniform distribution,
+meaning that they need to be normalized somewhat before being used, and they
+don't necessarily produce a lot of bits in many cases, limiting how quickly
+entropy can be generated.
+
+Entropy systems usually are also based on some degree of confidentiality, 
+typically by either using sources of entropy that are not easily observable
+by other programs or users, or by combining so many such sources that it is
+expensive to intercept or replicate all of them effectively. This would then
+be combined with some degree of PRNG to increase the amount of data available, 
+but some care is typically required when dealing with cryptography.
+
+Technically there is also published random numbers or other similar books, but
+they are a somewhat more complex issue, and typically are just a convenience
+for sharing entropy that is pregenerated, for example when publishing a study
+that uses a large amount of random numbers, but where you may not want to 
+separately publish your random numbers, or you may not want to be questioned
+about why those specific numbers were chosen.
+
+I'm not currently sure what entropy or published random numbers support I'm
+likely to implement yet, but I think there are two relatively obvious features
+that would use a PCG system.
+
+Firstly, the fully specified 64 bit implementation and a somewhat smaller and
+potentially somewhat faster 32 bit implementation could be provided as a direct
+source of PRNG, along with some notes and caveats to help programmers avoid
+making obvious mistakes when using them, not treating the 32 bit generator as
+half of a 64 bit generator for example.
+
+Secondly, I think a generic version of the algorithm would be quite useful
+which is matched to the bit output that is expected. That is, you could specify
+properties like generating numbers exactly once, uniformity is always assumed, 
+or you could even try increasing the number of permutations mixed in to increase
+the number of repetitions without sacrificing uniformity. That would be useful
+for some cases were the amount of numbers required is quite large, but the amount
+of repetitions matters.
+
+
 ---- macOS x86-64 Calling Convention Notes ----
 
   * rdx:rax is return value.

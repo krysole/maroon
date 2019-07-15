@@ -24,6 +24,7 @@ global.BigNumber = require("bignumber.js");
 let fs                      = require("fs");
 let inspect                 = require("util").inspect;
 
+let Lexer                   = require("./Lexer.js");
 let Parser                  = require("./Parser.js");
 
 let InstallPlatform         = require("./InstallPlatform.js");
@@ -80,13 +81,19 @@ function main(argv) {
   InstallPlatform.install(unit);
   
   
-  for (let sourcePath of sourcePaths) {
-    let sourcePath   = "./main.mn";
-    let sourceString = fs.readFileSync(sourcePath, "utf8");
-    let sourceAst    = new Parser().match("unit", sourceString, sourcePath);
-    
-    InstallSourceUnit.install(unit, sourceAst);
-  }
+  let sourcePath   = "./main.mn";
+  let sourceString = fs.readFileSync(sourcePath, "utf8");
+  let sourceTokens = new Lexer(sourceString, sourcePath).all();
+  
+  
+  output(null, inspect(sourceTokens, { depth: null }) + "\n");
+  
+  
+  // let sourcePath   = "./main.mn";
+  // let sourceString = fs.readFileSync(sourcePath, "utf8");
+  // let sourceAst    = new Parser().match("unit", sourceString, sourcePath);
+  
+  // InstallSourceUnit.install(unit, sourceAst);
   
   
   // output(null, inspect(unit, { depth: null }) + "\n");
