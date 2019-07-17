@@ -229,14 +229,14 @@ function AnalyzeTypePropagation(ast, context) {
           }
           
           if (a.type.width < 64) {
-            ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed, ref: false }};
+            ast.arguments[i] = { tag: "ExtendCast", loc: ast.loc, argument: a, type: { tag: "IntegerType", width: 64, signed: a.type.signed, ref: false }};
           }
         }
         else if (a.type.tag === "BooleanType") {
           a.type.width  = 8;
           a.type.signed = false;
           
-          ast.arguments[i] = { tag: "ExtendCast", argument: a, type: { tag: "IntegerType", width: 64, signed: false, ref: false }};
+          ast.arguments[i] = { tag: "ExtendCast", loc: ast.loc, argument: a, type: { tag: "IntegerType", width: 64, signed: false, ref: false }};
         }
         else if (a.type.tag === "HaltType") throw new Error("Cannot pass argument of halt type as vararg.");
         else if (a.type.tag === "VoidType") throw new Error("Cannot pass argument of void type as vararg.");

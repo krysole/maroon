@@ -121,7 +121,7 @@ function Simplify(ast, context) {
     ast.condition = ConvertCondition(ast.condition);
     
     if (ast.negated) {
-      ast.condition = { tag: "NotCondition", a: ast.condition };
+      ast.condition = { tag: "NotCondition", loc: ast.condition.loc, a: ast.condition };
     }
     
     Simplify(ast.condition, context);
@@ -138,7 +138,7 @@ function Simplify(ast, context) {
     ast.condition = ConvertCondition(ast.condition);
     
     if (ast.negated) {
-      ast.condition = { tag: "NotCondition", a: ast.condition };
+      ast.condition = { tag: "NotCondition", loc: ast.condition.loc, a: ast.condition };
     }
     
     Simplify(ast.condition, context);
@@ -148,7 +148,7 @@ function Simplify(ast, context) {
     ast.condition = ConvertCondition(ast.condition);
     
     if (ast.negated) {
-      ast.condition = { tag: "NotCondition", a: ast.condition };
+      ast.condition = { tag: "NotCondition", loc: ast.condition.loc, a: ast.condition };
     }
     
     Simplify(ast.body, context);
@@ -227,22 +227,22 @@ function Simplify(ast, context) {
     Simplify(ast.condition, context);
   }
   else if (ast.tag === "OrExpression") {
-    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    Object.transmute(ast, { tag: "ConditionExpression", loc: ast.loc, condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
   else if (ast.tag === "XorExpression") {
-    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    Object.transmute(ast, { tag: "ConditionExpression", loc: ast.loc, condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
   else if (ast.tag === "AndExpression") {
-    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    Object.transmute(ast, { tag: "ConditionExpression", loc: ast.loc, condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
   else if (ast.tag === "NotExpression") {
-    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    Object.transmute(ast, { tag: "ConditionExpression", loc: ast.loc, condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
@@ -251,14 +251,14 @@ function Simplify(ast, context) {
     Simplify(ast.type, context);
     
     if (ast.argument.tag === "IntegerLiteral" && ast.type.tag === "IntegerType") {
-      Object.transmute(ast, { tag: "IntegerLiteral", value: ast.argument.value, type: ast.type });
+      Object.transmute(ast, { tag: "IntegerLiteral", loc: ast.argument.loc, value: ast.argument.value, type: ast.type });
       
       Simplify(ast, context);
       
       return;
     }
     if (ast.argument.tag === "NullPtrLiteral" && ast.type.tag === "PointerType") {
-      Object.transmute(ast, { tag: "NullPtrLiteral", type: ast.type });
+      Object.transmute(ast, { tag: "NullPtrLiteral", loc: ast.argument.loc, type: ast.type });
       
       Simplify(ast, context);
       
@@ -273,7 +273,7 @@ function Simplify(ast, context) {
     Simplify(ast.alternative, context);
   }
   else if (ast.tag === "ComparisonExpression") {
-    Object.transmute(ast, { tag: "ConditionExpression", condition: ConvertCondition(ast) });
+    Object.transmute(ast, { tag: "ConditionExpression", loc: ast.loc, condition: ConvertCondition(ast) });
     
     Simplify(ast, context);
   }
@@ -326,12 +326,12 @@ function Simplify(ast, context) {
     
     if (ast.subject.tag === "PointerType") {
       if (ast.arguments.length === 0) {
-        Object.transmute(ast, { tag: "NullPtrLiteral", type: ast.subject });
+        Object.transmute(ast, { tag: "NullPtrLiteral", loc: ast.loc, type: ast.subject });
         
         Simplify(ast, context);
       }
       else if (ast.arguments.length === 1) {
-        Object.transmute(ast, { tag: "InitPointerExpression", location: ast.arguments[0], type: ast.subject });
+        Object.transmute(ast, { tag: "InitPointerExpression", loc: ast.loc, location: ast.arguments[0], type: ast.subject });
         
         Simplify(ast, context);
       }
@@ -340,12 +340,12 @@ function Simplify(ast, context) {
       }
     }
     else if (ast.subject.tag === "StructType") {
-      Object.transmute(ast, { tag: "InitStructExpression", type: ast.subject, arguments: ast.arguments });
+      Object.transmute(ast, { tag: "InitStructExpression", loc: ast.loc, type: ast.subject, arguments: ast.arguments });
       
       Simplify(ast, context);
     }
     else if (ast.subject.tag === "VectorType") {
-      Object.transmute(ast, { tag: "InitVectorExpression", type: ast.subject, arguments: ast.arguments });
+      Object.transmute(ast, { tag: "InitVectorExpression", loc: ast.loc, type: ast.subject, arguments: ast.arguments });
       
       Simplify(ast, context);
     }
@@ -354,7 +354,7 @@ function Simplify(ast, context) {
         throw new Error("Typecast to integer expects a single argument.");
       }
       
-      Object.transmute(ast, { tag: "TypecastExpression", type: ast.subject, argument: ast.arguments[0] });
+      Object.transmute(ast, { tag: "TypecastExpression", loc: ast.loc, type: ast.subject, argument: ast.arguments[0] });
       
       Simplify(ast, context);
     }
@@ -468,22 +468,22 @@ function ConvertCondition(ast) {
     return ast;
   }
   else if (ast.tag === "OrExpression") {
-    return { tag: "OrCondition", a: ast.a, b: ast.b };
+    return { tag: "OrCondition", loc: ast.loc, a: ast.a, b: ast.b };
   }
   else if (ast.tag === "XorExpression") {
-    return { tag: "XorCondition", a: ast.a, b: ast.b };
+    return { tag: "XorCondition", loc: ast.loc, a: ast.a, b: ast.b };
   }
   else if (ast.tag === "AndExpression") {
-    return { tag: "AndCondition", a: ast.a, b: ast.b };
+    return { tag: "AndCondition", loc: ast.loc, a: ast.a, b: ast.b };
   }
   else if (ast.tag === "NotExpression") {
-    return { tag: "NotCondition", a: ast.a };
+    return { tag: "NotCondition", loc: ast.loc, a: ast.a };
   }
   else if (ast.tag === "ComparisonExpression") {
-    return { tag: "ComparisonCondition", o: ast.o, a: ast.a, b: ast.b };
+    return { tag: "ComparisonCondition", loc: ast.loc, o: ast.o, a: ast.a, b: ast.b };
   }
   else {
-    return { tag: "ValueCondition", value: ast };
+    return { tag: "ValueCondition", loc: ast.loc, value: ast };
   }
 };
 

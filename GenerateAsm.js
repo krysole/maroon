@@ -224,10 +224,10 @@ function GenerateAsm(ast, context) {
     
     function emitNull(type) {
       if (type.tag === "StructType") {
-        emitInitializer({ tag: "InitStructExpression", type: type, arguments: [] });
+        emitInitializer({ tag: "InitStructExpression", loc: null, type: type, arguments: [] });
       }
       else if (type.tag === "VectorType") {
-        emitInitializer({ tag: "InitVectorExpression", type: type, arguments: [] });
+        emitInitializer({ tag: "InitVectorExpression", loc: null, type: type, arguments: [] });
       }
       else if (type.tag === "FunctionType") {
         context.asm += `  .quad    0\n`;

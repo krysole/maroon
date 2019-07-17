@@ -385,7 +385,7 @@ function AnalyzeTypeInferencing(ast) {
         throw new Error("Expected one argument for vector subscript.");
       }
       
-      Object.transmute(ast, { tag: "SubscriptExpression", subject: ast.subject, index: ast.arguments[0] });
+      Object.transmute(ast, { tag: "SubscriptExpression", loc: ast.loc, subject: ast.subject, index: ast.arguments[0] });
       
       AnalyzeTypeInferencing(ast);
     }
@@ -399,12 +399,12 @@ function AnalyzeTypeInferencing(ast) {
     }
     else if (ast.subject.type.tag === "PointerType") {
       if (ast.arguments.length === 0) {
-        Object.transmute(ast, { tag: "DereferenceExpression", subject: ast.subject })
+        Object.transmute(ast, { tag: "DereferenceExpression", loc: ast.loc, subject: ast.subject })
         
         AnalyzeTypeInferencing(ast);
       }
       else if (ast.arguments.length === 1) {
-        Object.transmute(ast, { tag: "SubscriptExpression", subject: ast.subject, index: ast.arguments[0] });
+        Object.transmute(ast, { tag: "SubscriptExpression", loc: ast.loc, subject: ast.subject, index: ast.arguments[0] });
         
         AnalyzeTypeInferencing(ast);
       }
