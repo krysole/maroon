@@ -54,3 +54,6 @@ TASKLIST
 
 - Continue analyzing the design and tasks for The Fluorite Programming Language.
 - Consider changing IntegerLiteral et cetera, into IntegerExpression et cetera.
+
+- Consider turning memoization back on in the parser, since it should still work.
+	This would help with the performance of branches with common left factors.

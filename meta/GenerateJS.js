@@ -20,6 +20,20 @@
 module.exports =
 class GenerateJS {
   
+  constructor(system) {
+    if (system === "meta") {
+      this.builtins = this.meta_builtins;
+      this.memoFlag = true;
+    }
+    else if (system === "maroon") {
+      this.builtins = this.maroon_builtins;
+      this.memoFlag = false;
+    }
+    else {
+      throw new Error();
+    }
+  }
+  
   handle(ast, ...rest) {
     if (this["handle" + ast.tag] != null) {
       return this["handle" + ast.tag](ast, ...rest);
@@ -29,7 +43,7 @@ class GenerateJS {
     }
   }
   
-  get builtins() {
+  get meta_builtins() {
     return [
       `match(rule, input, name) {`,
       `  this.$input    = input;`,
@@ -136,6 +150,53 @@ class GenerateJS {
     ];
   }
   
+  get maroon_builtins() {
+    return [
+      `match(rule, input) {`,
+      `  this.$input    = input;`,
+      `  this.$position = 0;`,
+      `  this.$furthest = 0;`,
+      `  `,
+      `  let result = this[rule]();`,
+      `  if (result !== FAIL) {`,
+      `    return result;`,
+      `  }`,
+      `  else {`,
+      `    throw new Error(\`Failed to match, furthest position \${this.loc(this.$furthest)}.\`);`,
+      `  }`,
+      `}`,
+      ``,
+      `log(message) {`,
+      `  let t = this.$input.get(this.$position);`,
+      ``,
+      `  console.log(\`\${this.constructor.name}.prototype.log() \${this.loc(this.$position)} \${message}\`);`,
+      `}`,
+      ``,
+      `loc(pos) {`,
+      `  return this.$input.get(pos != null ? pos : this.$position).loc;`,
+      `}`,
+      ``,
+      `token(tag) {`,
+      `  let t = this.$input.get(this.$position++);`,
+      `  if (tag != null && t.tag !== tag) return FAIL;`,
+      `  `,
+      `  if (this.$position > this.$furthest) this.$furthest = this.$position;`,
+      `  `,
+      `  return t;`,
+      `}`,
+      ``,
+      `t(tag) { return this.token(tag); }`,
+      ``,
+      `nothing() {`,
+      `  return null;`,
+      `}`,
+      ``,
+      `pos() {`,
+      `  return this.$position;`,
+      `}`,
+    ];
+  }
+  
   handleGrammar(ast, prefix) {
     if (prefix == null) prefix = ``;
     ast.js = ``;
@@ -171,7 +232,7 @@ class GenerateJS {
     if (ast.bound.length > 0) {
       ast.js += prefix + `  let ${ast.bound.join(", ")};\n`;
     }
-    if (ast.parameters.length === 0) {
+    if (ast.parameters.length === 0 && this.memoFlag) {
       ast.js += prefix + `  \n`;
       ast.js += prefix + `  let MEMO = this.$memotab[this.$position];\n`;
       ast.js += prefix + `  if (MEMO.rule === ${JSON.stringify(ast.name)}) {\n`;
@@ -181,7 +242,7 @@ class GenerateJS {
     }
     ast.js += prefix + `  \n`;
     ast.js += ast.pattern.js;
-    if (ast.parameters.length === 0) {
+    if (ast.parameters.length === 0 && this.memoFlag) {
       ast.js += prefix + `  \n`;
       ast.js += prefix + `  MEMO.rule = ${JSON.stringify(ast.name)};\n`;
       ast.js += prefix + `  MEMO.position = this.$position;\n`;

@@ -81,26 +81,26 @@ function main(argv) {
   InstallPlatform.install(unit);
   
   
-  let sourcePath   = "./main.mn";
-  let sourceString = fs.readFileSync(sourcePath, "utf8");
-  let sourceTokens = new Lexer(sourceString, sourcePath).all();
-  
-  
-  output(null, inspect(sourceTokens, { depth: null }) + "\n");
-  
-  
   // let sourcePath   = "./main.mn";
   // let sourceString = fs.readFileSync(sourcePath, "utf8");
-  // let sourceAst    = new Parser().match("unit", sourceString, sourcePath);
+  // let sourceTokens = new Lexer(sourceString, sourcePath).all();
   
-  // InstallSourceUnit.install(unit, sourceAst);
+  // output(null, inspect(sourceTokens, { depth: null }) + "\n");
   
+  
+  let sourcePath   = "./main.mn";
+  let sourceString = fs.readFileSync(sourcePath, "utf8");
+  let sourceAst    = new Parser().match("unit", new Lexer(sourceString, sourcePath));
+  
+  // output(null, inspect(sourceAst, { depth: null }) + "\n");
+  
+  
+  InstallSourceUnit.install(unit, sourceAst);
   
   // output(null, inspect(unit, { depth: null }) + "\n");
   
   
   Simplify(unit);
-  
   
   // output(null, inspect(unit, { depth: null }) + "\n");
   
@@ -110,18 +110,15 @@ function main(argv) {
   AnalyzeTypePropagation(unit);
   AnalyzeAddrReferences(unit);
   
-  
   // output(null, inspect(unit, { depth: null }) + "\n");
 
 
   AnalyzeFrameLayout(unit);
   
-  
   // output(null, inspect(unit, { depth: null }) + "\n");
   
   
   GenerateAsm(unit);
-  
   
   output(null, unit.asm);
   

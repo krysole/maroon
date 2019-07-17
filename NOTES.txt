@@ -489,6 +489,94 @@ for some cases were the amount of numbers required is quite large, but the amoun
 of repetitions matters.
 
 
+---- Engineering Values ----
+
+I'm not yet exactly sure what the priorities of these are, so take them roughly
+in the order that they appear. Like Rust, we wish to 'bend the curve' alot here, 
+especially where the values are not mutually exclusive under better strategies.
+
+- Software Change Stability
+  Don't break compatability where possible.
+
+- Wetware Change Stability
+  Don't make people rewire their wetware continuously.
+  
+  Major Releases; 10 years, language design changes.
+  Minor Releases; 2 years, core library additions.
+  Patch Releases; immediate, security corrections.
+  
+  Performance is the dark horse which sometimes necessitates minor releases
+  changes, despite potentially changing programmers mental models of the
+  language. As a rule, these should be on major releases to reduce codebase
+  churn resulting from changes in programming strategies, but changes that
+  appear stable for the long term may be exceptions to the rule. My thinking
+  here is that they would be allowed into minor releases, on the provision that
+  they are not expected to cause churn due to optimization changes in 
+  applications, or the performance improvement is very significant.
+
+
+- Message Passing and Object Capabilities (Fluorite)
+
+  A message can be implemented with a method certainly, but it is still a message, 
+  and it can always just be forwarded, or programatically handled, including
+  sending it over a network.
+  
+  Capabilities respectively are not just a way of writing modular programs, but
+  should be seemless and straightforward to work with, and in some cases should
+  even have resource accounting. This isn't particularly helpful for security, 
+  but it helps a great deal for engineering, and could even be quite fun for
+  things like game developers or user programmers possible.
+  
+  Capabilities may occassionally limit some Maroon functionality in Fluorite
+  methods, to allow them to be instantiated non globally.
+
+- Straightforward Design
+  The notation should be straightforward but consistent.
+  
+  Programmers should not expect to write the shortest code possible whenever
+  possible, since this doesn't always make the code simpler or less costly to
+  design and maintain.
+  
+  Programmers likewise shouldn't be coding tornados making a mess, and the 
+  language should make design and maintainence itself practical, if again, not
+  alway necessarily the fastest.
+  
+  Put simply, the costs should be bounded, and programming should be a 
+  satisfying and professional endevour.
+
+
+- Performance (Maroon and Fluorite)
+  Balenced latency, throughput and compactness.
+  
+  This is especially notable for the memory management in Fluorite, which is
+  supposed to use a combination of cache oriented reference counting, along with
+  a pause free garbage collector, while still compacting memory by moving 
+  objects using the message passing value above to allow message forwarding
+  during object relocation. An example of values coming together to solve a 
+  larger problem.
+  
+- Systems Programming (Maroon and Fluorite)
+  It is necessary to be able to leverage the capabilities of the machine and
+  the operating system to write interesting programs, period.
+
+
+- Secure By Default
+  Security isn't a core engineering value, but not preventing it is. We 
+  shoudn't break security in the name of other tradeoffs if at all possible.
+
+- Reliability and Fault Tolerance
+  Software should generally be reliable and relatively free of fault, but when
+  a fault does arise, it should not generally be handled by special cases but
+  by a general principle like heirarchical system restart logic.
+
+
+- Function then Safety then Productivity, but only a little.
+  We should be able to write what we need, do it without high risk of introducing
+  faults, and without spending inordinate amounts of time doing so, in that order, 
+  but all of them where ever possible.
+
+
+
 ---- macOS x86-64 Calling Convention Notes ----
 
   * rdx:rax is return value.

@@ -19,8 +19,8 @@
 grammar Parser {
   
   unit 
-    = declaration*:ds end
-      !{ tag: "Source", declarations: ds }
+    = ( ( declaration ; t(";") )*:ds t(";")? t("LINE_TERMINATOR") !ds )*:dss end
+      !{ tag: "Source", declarations: dss.flat() }
     ;
   
   
@@ -32,27 +32,47 @@ grammar Parser {
     ;
   
   letDeclaration
-    = id("let") ( variable ; p(",") )+:vs p(";")
-      !{ tag: "LetDeclaration", variables: vs }
+    = id("let"):q ( variable ; p(",") )+:vs p(";")
+      !{ tag: "LetDeclaration", loc: q.loc, variables: vs }
     ;
   
   classDeclaration
-    = id("class") local:n mixins?:cms mixins?:mms p("{") behavior*:bs p("}")
-      !{ tag: "ClassDeclaration", name: n, behaviors: bs }
+    = id("class"):q local:n mixins?:cms mixins?:mms p("{") behavior*:bs p("}")
+      !{ tag: "ClassDeclaration", loc: q.loc, name: n.value, behaviors: bs }
+    ;
+  classBody
+    = t("LINE_TERMINATOR")?
+      t("{") ( behavior ; t(";") )*:bs t(";")? t("}")
+      !bs
+    | t("LINE_TERMINATOR")?
+      t("{") t("INDENT")
+      ( ( behavior ; t(";") )*:bs t(";")? t("LINE_TERMINATOR") !bs )*:bss
+      t("DEDENT") t("}")
+      !bss.flat()
     ;
   
   structDeclaration
-    = id("struct") local:n p("{") structField*:fs p("}")
-      !{ tag: "StructDeclaration", name: n, fields: fs }
+    = id("struct"):q local:n structBody:fs
+      !{ tag: "StructDeclaration", loc: q.loc, name: n.value, fields: fs }
+    ;
+  structBody
+    = t("LINE_TERMINATOR")?
+      t("{") ( structField ; t(",") )*:fs t(",")? t("}")
+      !fs
+    | t("LINE_TERMINATOR")?
+      t("{") t("INDENT")
+      ( ( structField ; t(",") )*:fs t(",")? t("LINE_TERMINATOR") !fs )*:fss
+      t("DEDENT") t("}")
+      !fss.flat()
     ;
   structField
-    = id:n p(":") type:t p(";")
-      !{ tag: "Field", name: n, type: t }
+    = id:n p(":") type:t
+      !{ tag: "Field", loc: n.loc, name: n.value, type: t }
     ;
   
   functionDeclaration
-    = id("fn") local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r fnbody:b
-      !{ tag: "FunctionDeclaration", name: n, parameters: ps, vaparam: va, rtype: r, body: b }
+    = id("fn"):q local:n p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r fnbody:b
+      !{ tag: "FunctionDeclaration", loc: q.loc, name: n.value, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
   
@@ -62,23 +82,22 @@ grammar Parser {
     ;
   
   letBehavior
-    = id("let") ( variable ; p(",") )+:vs p(";")
-      !{ tag: "LetBehavior", variables: vs }
+    = id("let"):q ( variable ; p(",") )+:vs
+      !{ tag: "LetBehavior", loc: q.loc, variables: vs }
     ;
   
   methodBehavior
-    = static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") p(":") type:r pbody:b
-      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
-    | static:s visibility:v id:n                                                     p(":") type:r pbody:b
-      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: [], vaparam: false, rtype: r, body: b }
-    | static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r pbody:b
-      !{ tag: "MethodBehavior", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
+    = &t:q static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") p(":") type:r pbody:b
+      !{ tag: "MethodBehavior", loc: q.loc, name: n.value, static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
+    | &t:q static:s visibility:v id:n                                                     p(":") type:r pbody:b
+      !{ tag: "MethodBehavior", loc: q.loc, name: n.value, static: s, visibility: v, parameters: [], vaparam: false, rtype: r, body: b }
+    | &t:q static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r pbody:b
+      !{ tag: "MethodBehavior", loc: q.loc, name: "apply", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
   
   statement
-    = labelStatement
-    | letStatement
+    = letStatement
     | ifStatement
     | unlessStatement
     | onceStatement
@@ -92,110 +111,96 @@ grammar Parser {
     | breakStatement
     | continueStatement
     | returnStatement
-    | gotoStatement
     | expressionStatement
-    | emptyStatement
-    ;
-  
-  labelStatement
-    = id("label") id:n p(";")
-      !{ tag: "LabelStatement", name: n }
     ;
   
   letStatement
-    = id("let") ( variable ; p(",") )+:vs p(";")
-      !{ tag: "LetStatement", variables: vs }
+    = id("let"):q ( variable ; p(",") )+:vs
+      !{ tag: "LetStatement", loc: q.loc, variables: vs }
     ;
   
   ifStatement
-    = id("if") expression:c
-      ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | id("else") block:f | !null:f )
-      !{ tag: "IfStatement", negated: false, condition: c, consiquent: t, alternative: f }
+    = id("if"):q expression:c
+      ( t("LINE_TERMINATOR")? id("then") expression:t )
+      ( t("LINE_TERMINATOR")? else:f | !null:f )
+      !{ tag: "IfStatement", loc: q.loc, negated: false, condition: c, consiquent: t, alternative: f }
     ;
-  
   unlessStatement
-    = id("unless") expression:c
-      ( id("then") statement:t | block:t )
-      ( id("else") ~p("{") statement:f | id("else") block:f | !null:f )
-      !{ tag: "IfStatement", negated: true, condition: c, consiquent: t, alternative: f }
+    = id("unless"):q expression:c
+      ( t("LINE_TERMINATOR")? id("then") expression:t )
+      ( t("LINE_TERMINATOR")? else:f | !null:f )
+      !{ tag: "IfStatement", loc: q.loc, negated: true, condition: c, consiquent: t, alternative: f }
+    ;
+  else
+    = ifStatement
+    | unlessStatement
+    | id("else") ( expression | block )
     ;
   
   onceStatement
-    = id("once") block:b
-      !{ tag: "OnceStatement", body: b }
+    = id("once"):q ( expression:b | block:b )
+      !{ tag: "OnceStatement", loc: q.loc, body: b }
+    | block:b
+      !{ tag: "OnceStatement", loc: b.loc, body: b }
     ;
-  
   foreverStatement
-    = id("forever") block:b
-      !{ tag: "ForeverStatement", body: b}
+    = id("forever"):q ( expression:b | block:b )
+      !{ tag: "ForeverStatement", loc: q.loc, body: b }
     ;
   
   whileStatement
-    = id("while") expression:c ( id("do") statement:b | block:b )
-      !{ tag: "WhileStatement", negated: false, condition: c, body: b }
+    = id("while"):q expression:c
+      ( tagbody("do"):b | block:b )
+      !{ tag: "WhileStatement", loc: q.loc, negated: false, condition: c, body: b }
     ;
-  
   untilStatement
-    = id("until") expression:c ( id("do") statement:b | block:b )
-      !{ tag: "WhileStatement", negated: true, condition: c, body: b }
+    = id("until"):q expression:c
+      ( tagbody("do"):b | block:b )
+      !{ tag: "WhileStatement", loc: q.loc, negated: true, condition: c, body: b }
     ;
   
   doWhileStatement
-    = id("do") ( ~p("{") statement:b | block:b )
-      id("while") expression:c p(";")
-      !{ tag: "DoWhileStatement", negated: false, condition: c, body: b }
+    = id("do"):q ( ~t("{") expression:e | block:b )
+      t("LINE_TERMINATOR")? id("while") expression:c
+      !{ tag: "DoWhileStatement", loc: q.loc, negated: false, condition: c, body: b }
     ;
-  
   doUntilStatement
-    = id("do") ( ~p("{") statement:b | block:b )
-      id("until") expression:c p(";")
-      !{ tag: "DoWhileStatement", negated: true, condition: c, body: b }
+    = id("do"):q ( ~t("{") expression:e | block:b )
+      t("LINE_TERMINATOR")? id("until") expression:c
+      !{ tag: "DoWhileStatement", loc: q.loc, negated: true, condition: c, body: b }
     ;
   
   forStatement
-    = id("for")
+    = id("for"):q
       ( variable ; p(",") )+:vs p(";")
       ( expression ; p(",") )+:cs p(";")
       ( expression ; p(",") )+:is
-      ( id("do") statement:b | block:b )
-      !{ tag: "ForStatement", variables: vs, conditions: cs, increments: is, body: b }
+      ( tagbody("do"):b | block:b )
+      !{ tag: "ForStatement", loc: q.loc, variables: vs, conditions: cs, increments: is, body: b }
     ;
-  
   forInStatement
-    = id("for") local:n id("in") expression:e ( id("do") statement:b | block:b )
-      !{ tag: "ForStatement", name: n, subject: e, body: b }
-    ;
-      
+    = id("for"):q local:n id("in") expression:e
+      ( tagbody("do"):b | block:b )
+      !{ tag: "ForInStatement", loc: q.loc, name: n.value, subject: e, body: b }
+    ; 
   
   breakStatement
-    = id("break") p(";")
-      !{ tag: "BreakStatement" }
+    = id("break"):q
+      !{ tag: "BreakStatement", loc: q.loc }
     ;
-  
   continueStatement
-    = id("continue") p(";")
-      !{ tag: "ContinueStatement" }
+    = id("continue"):q
+      !{ tag: "ContinueStatement", loc: q.loc }
     ;
   
   returnStatement
-    = id("return") expression?:e p(";")
-      !{ tag: "ReturnStatement", expression: e }
-    ;
-  
-  gotoStatement
-    = id("goto") id:n p(";")
-      !{ tag: "GotoStatement", name: n }
+    = id("return"):q expression?:e
+      !{ tag: "ReturnStatement", loc: q.loc, expression: e }
     ;
   
   expressionStatement
-    = expression:e p(";")
-      !{ tag: "ExpressionStatement", expression: e }
-    ;
-  
-  emptyStatement
-    = p(";")
-      !{ tag: "EmptyStatement" }
+    = expression:e
+      !{ tag: "ExpressionStatement", loc: e.loc, expression: e }
     ;
   
   
@@ -205,95 +210,95 @@ grammar Parser {
   
   logicalInfixExpression
     = logicalNotExpression:a
-      ( id("or")  logicalNotExpression:b !{ tag: "OrExpression",  a: a, b: b }:a
-      | id("xor") logicalNotExpression:b !{ tag: "XorExpression", a: a, b: b }:a
-      | id("and") logicalNotExpression:b !{ tag: "AndExpression", a: a, b: b }:a
+      ( id("or")  logicalNotExpression:b !{ tag: "OrExpression",  loc: a.loc, a: a, b: b }:a
+      | id("xor") logicalNotExpression:b !{ tag: "XorExpression", loc: a.loc, a: a, b: b }:a
+      | id("and") logicalNotExpression:b !{ tag: "AndExpression", loc: a.loc, a: a, b: b }:a
       )*
       !a
     ;
   
   logicalNotExpression
-    = id("not") logicalNotExpression:a !{ tag: "NotExpression", a: a }
+    = id("not"):q logicalNotExpression:a !{ tag: "NotExpression", loc: q.loc, a: a }
     | setExpression
     ;
   
   setExpression
     = typecastExpression:l p("<-") setExpression:e
-      !{ tag: "SetExpression", location: l, value: e }
+      !{ tag: "SetExpression", loc: l.loc, location: l, value: e }
     | typecastExpression
     ;
   
   typecastExpression
     = ternaryExpression:a
-      ( id("as") ternaryExpression:t !{ tag: "TypecastExpression", type: t, argument: a }:a
+      ( id("as") ternaryExpression:t !{ tag: "TypecastExpression", loc: a.loc, type: t, argument: a }:a
       )*
       !a
     ;
   
   ternaryExpression
     = comparisonExpression:c p("?") ternaryExpression:t p(":") ternaryExpression:f
-      !{ tag: "TernaryExpression", condition: c, consiquent: t, alternative: f }
+      !{ tag: "TernaryExpression", loc: c.loc, condition: c, consiquent: t, alternative: f }
     | comparisonExpression
     ;
     
   comparisonExpression
     = vectorInfixExpression:a
-      ( p("=="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "==", a: a, b: b }
-      | p("/="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "/=", a: a, b: b }
-      | p(">="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: ">=", a: a, b: b }
-      | p(">"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", o: ">",  a: a, b: b }
-      | p("<="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "<=", a: a, b: b }
-      | p("<"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", o: "<",  a: a, b: b }
+      ( p("=="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: "==", a: a, b: b }
+      | p("/="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: "/=", a: a, b: b }
+      | p(">="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: ">=", a: a, b: b }
+      | p(">"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: ">",  a: a, b: b }
+      | p("<="):o vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: "<=", a: a, b: b }
+      | p("<"):o  vectorInfixExpression:b !{ tag: "ComparisonExpression", loc: a.loc, o: "<",  a: a, b: b }
       |                                   !a
       )
     ;
   
   vectorInfixExpression
     = addExpression:a
-      ( p("|") addExpression:b !{ tag: "InfixExpression", o: "|", a: a, b: b }:a
-      | p("^") addExpression:b !{ tag: "InfixExpression", o: "^", a: a, b: b }:a
-      | p("&") addExpression:b !{ tag: "InfixExpression", o: "&", a: a, b: b }:a
+      ( p("|") addExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "|", a: a, b: b }:a
+      | p("^") addExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "^", a: a, b: b }:a
+      | p("&") addExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "&", a: a, b: b }:a
       )*
       !a
     ;
   
   addExpression
     = mulExpression:a
-      ( p("+") mulExpression:b !{ tag: "InfixExpression", o: "+", a: a, b: b }:a
-      | p("-") mulExpression:b !{ tag: "InfixExpression", o: "-", a: a, b: b }:a
+      ( p("+") mulExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "+", a: a, b: b }:a
+      | p("-") mulExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "-", a: a, b: b }:a
       )*
       !a
     ;
     
   mulExpression
     = expExpression:a
-      ( p("*")    expExpression:b !{ tag: "InfixExpression", o: "*",   a: a, b: b }:a
-      | p("/")    expExpression:b !{ tag: "InfixExpression", o: "/",   a: a, b: b }:a
-      | id("quo") expExpression:b !{ tag: "InfixExpression", o: "quo", a: a, b: b }:a
-      | id("rem") expExpression:b !{ tag: "InfixExpression", o: "rem", a: a, b: b }:a
+      ( p("*")    expExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "*",   a: a, b: b }:a
+      | p("/")    expExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "/",   a: a, b: b }:a
+      | id("quo") expExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "quo", a: a, b: b }:a
+      | id("rem") expExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "rem", a: a, b: b }:a
       )*
       !a
     ;
   
   expExpression
     = prefixExpression:a
-      ( p("exp") prefixExpression:b !{ tag: "InfixExpression", o: "exp", a: a, b: b }:a )*
+      ( id("exp") prefixExpression:b !{ tag: "InfixExpression", loc: a.loc, o: "exp", a: a, b: b }:a )*
       !a
     ;
     
   prefixExpression
-    = p("+") secondaryExpression:a !{ tag: "PrefixExpression", o: "+", a: a }
-    | p("-") secondaryExpression:a !{ tag: "PrefixExpression", o: "-", a: a }
-    | p("~") secondaryExpression:a !{ tag: "PrefixExpression", o: "~", a: a }
-    |        secondaryExpression
+    = p("+"):q secondaryExpression:a !{ tag: "PrefixExpression", loc: q.loc, o: "+", a: a }
+    | p("-"):q secondaryExpression:a !{ tag: "PrefixExpression", loc: q.loc, o: "-", a: a }
+    | p("~"):q secondaryExpression:a !{ tag: "PrefixExpression", loc: q.loc, o: "~", a: a }
+    |          secondaryExpression
     ;
   
   secondaryExpression
     = primaryExpression:e
-      ( p(".") id:n                               !{ tag: "FieldExpression", subject: e, name: n }:e
-      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
-      | p("[") ( keyval     ; p(",") )*:as p("]") !{ tag: "CallExpression",  subject: e, arguments: as }:e
-      | p("{") ( expression ; p(",") )*:as p("}") !{ tag: "SpecExpression",  subject: e, arguments: as }:e
+      ( p(".") id:n                               !{ tag: "FieldExpression", loc: e.loc, subject: e, name: n.value }:e
+      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e, arguments: as }:e
+      | p("[") ( keyval     ; p(",") )*:as p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e, arguments: as }:e
+      | p("{") ( expression ; p(",") )*:as p("}") !{ tag: "SpecExpression",  loc: e.loc, subject: e, arguments: as }:e
       )*
       !e
     ;
@@ -301,26 +306,23 @@ grammar Parser {
   primaryExpression
     = p("(") expression:a p(")") !a
     
-    | local:n !{ tag: "LookupExpression", name: n }
+    | local:n !{ tag: "LookupExpression", loc: n.loc, name: n.value }
     
-    // | p("[") expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", initial: { closed: i }, final: { closed: f } }
-    // | p("[") expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", initial: { closed: i }, final: { open:   f } }
-    // | p("(") expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", initial: { open:   i }, final: { closed: f } }
-    // | p("(") expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", initial: { open:   i }, final: { open:   f } }
+    // | p("["):q expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", loc: q.loc, initial: { closed: i }, final: { closed: f } }
+    // | p("["):q expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", loc: q.loc, initial: { closed: i }, final: { open:   f } }
+    // | p("("):q expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", loc: q.loc, initial: { open:   i }, final: { closed: f } }
+    // | p("("):q expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", loc: q.loc, initial: { open:   i }, final: { open:   f } }
     
-    | binintLiteral
-    | octintLiteral
-    | decintLiteral
-    | hexintLiteral
-    | stringLiteral
-    | id("true")  !{ tag: "BooleanLiteral", value: true }
-    | id("false") !{ tag: "BooleanLiteral", value: false }
+    | t("INTEGER"):q !{ tag: "IntegerLiteral", loc: q.loc, value: q.value }
+    | t("STRING"):q  !{ tag: "StringLiteral",  loc: q.loc, value: q.value }
+    | id("true"):q   !{ tag: "BooleanLiteral", loc: q.loc, value: true }
+    | id("false"):q  !{ tag: "BooleanLiteral", loc: q.loc, value: false }
     ;
   
   
   variable
     = local:n p("<-") expression:e
-      !{ tag: "VariableDeclaration", name: n, value: e }
+      !{ tag: "VariableDeclaration", loc: n.loc, name: n.value, value: e }
     ;
   
   
@@ -331,23 +333,29 @@ grammar Parser {
   
   fnbody
     = block
-    | do
-    | p(";") !null
+    | tagbody("do")
+    | &t("LINE_TERMINATOR") !null
+    | &t(";")               !null
     ;
   pbody
     = block
-    | do
+    | tagbody("do")
     ;
   
   
   block
-    = p("{") statement*:ss p("}")
-      !{ tag: "Block", statements: ss }
+    = t("LINE_TERMINATOR")?
+      t("{"):q ( statement ; t(";") )*:ss t(";")? t("}")
+      !{ tag: "Block", loc: q.loc, statements: ss }
+    | t("LINE_TERMINATOR")?
+      t("{"):q t("INDENT")
+      ( ( statement ; t(";") )*:ss t(";")? t("LINE_TERMINATOR") !ss )*:sss
+      t("DEDENT") t("}")
+      !{ tag: "Block", loc: q.loc, statements: sss.flat() }
     ;
-  do
-    = id("do") expression:e p(";")
-      !{ tag: "ExpressionStatement", expression: e }:s
-      !{ tag: "Block", statements: [s] }
+  tagbody(tag)
+    = t("LINE_TERMINATOR")?
+      id(tag) expression
     ;
   
   
@@ -358,7 +366,7 @@ grammar Parser {
   
   parameter
     = local:n p(":") type:t
-      !{ tag: "Parameter", name: n, type: t }
+      !{ tag: "Parameter", loc: n.loc, name: n.value, type: t }
     ;
   vaparam
     = p(",") p("...") !true
@@ -367,7 +375,7 @@ grammar Parser {
   
   keyval
     = id:n p(":") expression:v
-      !{ tag: "Keyval", key: n, value: v }
+      !{ tag: "Keyval", loc: n.loc, key: n.value, value: v }
     ;
   
   
@@ -382,51 +390,10 @@ grammar Parser {
     ;
   
   
-  binintLiteral
-    = ws* char("0") char("b") ( bin | char("_") )+:ds
-      !(new BigNumber(ds.join("").replace(/_/g, ""), 2)):v
-      !{ tag: "IntegerLiteral", value: v }
-    ;
-  octintLiteral
-    = ws* char("0") char("o") ( oct | char("_") )+:ds
-      !(new BigNumber(ds.join("").replace(/_/g, ""), 8)):v
-      !{ tag: "IntegerLiteral", value: v }
-    ;
-  decintLiteral
-    = ws* dec:d ( dec | char("_") )*:ds ~restIdChar
-      !(new BigNumber(d + ds.join("").replace(/_/g, ""), 10)):v
-      !{ tag: "IntegerLiteral", value: v }
-    ;
-  hexintLiteral
-    = ws* char("0") char("x") ( hex | char("_") )+:ds
-      !(new BigNumber(ds.join("").replace(/_/g, ""), 16)):v
-      !{ tag: "IntegerLiteral", value: v }
-    ;
-  stringLiteral
-    = ws* char("\"") ( ~char("\\\"\r\n") char | stringEscapeCharacter )*:cs char("\"")
-      !{ tag: "StringLiteral", value: cs.join("") }
-    ;
-  stringEscapeCharacter
-    = string("\\a")  !"\x07"
-    | string("\\b")  !"\x08"
-    | string("\\f")  !"\x0C"
-    | string("\\n")  !"\x0A"
-    | string("\\r")  !"\x0D"
-    | string("\\t")  !"\x09"
-    | string("\\v")  !"\x0B"
-    | string("\\\\") !"\x5C"
-    | string("\\\'") !"\x27"
-    | string("\\\"") !"\x22"
-    | string("\\x")  hex:a hex:b                         !String.fromCharCode(parseInt(a + b, 16))
-    | string("\\u")  hex:a hex:b hex:c hex:d             !String.fromCharCode(parseInt(a + b + c + d, 16))
-    | string("\\U")  hex:a hex:b hex:c hex:d hex:e hex:f !String.fromCharCode(parseInt(a + b + c + d + e + f, 16))
-    | string("\\U+") hex:a hex:b hex:c hex:d hex:e hex:f !String.fromCharCode(parseInt(a + b + c + d + e + f, 16))
-    ;
   local
-    = id:n
+    = id:i
       ?[
-        "fn", "struct", 
-        "label", "let",
+        "let", "fn", "struct", "class", "public", "private", "static",
         "if", "unless",
         "once", "forever", 
         "while", "until", "repeat", "for", "in",
@@ -436,76 +403,19 @@ grammar Parser {
         "and", "xor", "or", "not",
         "quo", "rem",
         "true", "false", "null"
-      ].excludes(n)
-      !n
+      ].excludes(i.value)
+      !i
     ;
   id(expected)
-    = ws* initIdChar:c restIdChar*:cs !(c + cs.join("")):i
-      ?((expected != null && expected === i) || (expected == null))
+    = t("IDENTIFIER"):i
+      ?((expected != null && expected === i.value) || (expected == null))
       !i
     ;
   p(expected)
-    = ws*
-      ( char("([{}])")
-        
-      | string("...")
-      | string(".") | string(":") | string("?") | string(",") | string(";")
-      
-      | string("<-")
-      
-      | string("==") | string("/=")
-      | string(">=") | string("<=") | string("<") | string(">")
-      
-      | string("+") | string("-") | string("*") | string("/")
-      | string("|") | string("^") | string("&") | string("~")
-      
-      ):s
-      ?(expected === s)
-      !s
+    = t(expected)
     ;
   end
-    = ws* ~char
-    ;
-  
-  
-  initIdChar
-    = range("A", "Z") | range("a", "z") | char("_")
-    ;
-  restIdChar
-    = range("A", "Z") | range("a", "z") | char("_") | range("0", "9")
-    ;
-  bin
-    = range("0", "1")
-    ;
-  oct
-    = range("0", "7")
-    ;
-  dec
-    = range("0", "9")
-    ;
-  hex
-    = range("0", "9") | range("A", "F") | range("a", "f")
-    ;
-  
-  
-  ws
-    = spaces
-    | newline
-    | lineComment
-    | delimitedComment
-    ;
-  spaces
-    = char(" \t")+
-    ;
-  newline
-    = char("\n") char("\r")?
-    | char("\r") char("\n")?
-    ;
-  lineComment
-    = string("--") ( ~newline char )* newline
-    ;
-  delimitedComment
-    = string("{#") ( ~string("{#") ~string("#}") char | delimitedComment )* string("#}")
+    = t("END")
     ;
   
 }

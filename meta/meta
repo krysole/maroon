@@ -29,6 +29,7 @@ let GenerateJS      = require("./GenerateJS.js");
 
 function main() {
   let mode       = null;
+  let system     = null;
   let outputPath = null;
   let inputPath  = null;
   
@@ -64,6 +65,13 @@ function main() {
       continue;
     }
     
+    // Meta System
+    if (o === "--system") {
+      if (i === c) abort(`Expected system name argument for --system/-s.`);
+      system = process.argv[i++];
+      continue;
+    }
+    
     // Output target file path.
     if (o === "--output") {
       if (i === c)            abort(`Expected path argument for --output/-o.`);
@@ -80,6 +88,13 @@ function main() {
         // Display usage and exit if help is specified.
         if (so === "h") {
           usage();
+        }
+        
+        // Meta System
+        if (so === "s") {
+          if (i === c) abort(`Expected system name argument for --system/-s.`);
+          system = process.argv[i++];
+          continue;
         }
         
         // Output target file path.
@@ -111,6 +126,7 @@ function main() {
   
   // Ensure that required options are present
   if (inputPath == null) usage();
+  if (system == null)    usage();
   
   
   // Read input
@@ -140,7 +156,7 @@ function main() {
   
   
   // Generate JavaScript
-  new GenerateJS().handle(ast);
+  new GenerateJS(system).handle(ast);
   if (mode === "generate") {
     output(outputPath, ast.js);
   }
