@@ -1,0 +1,13 @@
+--
+-- Test program.
+--
+
+fn printf[string: ptr{i8}, ...]: i32
+fn puts[string: ptr{i8}]: i32
+fn exit[exit_code: i32]: halt
+
+fn main[]: i32 {
+  printf["Hello world.\n"]
+  
+	exit[0]
+}

@@ -622,6 +622,40 @@ especially where the values are not mutually exclusive under better strategies.
   * multiple integers and possibly a float may need to be packed into a single ALU register.
 
 
+---- DWARF Register Number Mapping ----
+
+  |     0  %rax           |
+  |     1  %rdx           |
+  |     2  %rcx           |
+  |     3  %rbx           |
+  |     4  %rsi           |
+  |     5  %rdi           |
+  |     6  %rbp           |
+  |     7  %rsp           |
+  |  8-15  %r8-%r15       |
+  |    16  return_address |
+  | 17-24  %xmm0-%xmm7    |
+  | 25-32  %xmm8-%xmm15   |
+  | 33-40  %st0-%st7      |
+  | 41-48  %mm0-%mm7      |
+  |    49  %rFLAGS        |
+  |    50  %es            |
+  |    51  %cs            |
+  |    52  %ss            |
+  |    53  %ds            |
+  |    54  %fs            |
+  |    55  %gs            |
+  | 56-57  reserved       |
+  |    58  %rs.base       |
+  |    59  %gs.base       |
+  | 60-61  reserved       |
+  |    62  %tr            |
+  |    63  %ldtr          |
+  |    64  %mxcsr         |
+  |    65  %fcw           |
+  |    66  %fsw           |
+
+
 ---- Note on macOS Executable Format ----
 
 macOS uses a small executable memory layout (object) model, and doesn't require
