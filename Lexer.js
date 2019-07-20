@@ -186,7 +186,7 @@ class Lexer {
       }
       
       // INTEGER [HEXADECIMAL]
-      result = this.read(/0x([0-9A-Fa-f][0-9A-Fa-f_])*/y);
+      result = this.read(/0x([0-9A-Fa-f][0-9A-Fa-f_]*)/y);
       if (result != null) {
         this.emit({
           tag:   "INTEGER",
@@ -269,7 +269,7 @@ class Lexer {
       // ++
       // + - * /
       // | ^ & ~
-      result = this.read(/\.\.\.|\.\.|\.|\:|\,|\;|\<\-|\=\=|\/\=|\<\=|\>\=|\<|\>|\+\+|\+|\-|\*|\/|\||\^|\&|\~/y);
+      result = this.read(/\<\-|\=\=|\/\=|\<\=|\>\=|\<|\>|\+\+|\+|\-|\*|\/|\||\^|\&|\~/y);
       if (result != null) {
         this.emit({
           tag:   result[0],

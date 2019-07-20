@@ -101,7 +101,7 @@ class Object () {
 
 class Array (Object) {
   
-  let count    <- nil;                 -- Variable with id type can be initialized
+  let count    <- nil;                 -- Variable with ref type can be initialized
   let contents <- nil;                 -- using the nil default value.
   let tail     <- vec{4, id}[];        -- Vector types are supported over ids.
   
@@ -129,15 +129,11 @@ class Array (Object) {
 
 I think that object layout will follow something like the following.
 
-struct Header {
-  a: u64; -- class_link:48, tiny?/size:9, gc:7
-  b: u64; -- hash:48, hash?:1, reserved:6, slot_count:9
-}
-
 struct Object {
-  header: Header;
-  slots:  vec{id,  header.slot_count};
-  data:   vec{u64, header.size - header.slot_count};
+  header_a: u64 { class: 48, size:  9, gc:         7 }
+  header_b: u64 { hash:  48, flags: 6, ref_count: 10 }
+  ref:      vec{ref, 0 < ref_count   < 512 } -- 512 == 1 << 10 << 3
+  data:     vec{u64, 0 < (size << 4) < 256 } -- 256 == 1 <<  9 << 3
 }
 
 The calculations the GC and runtime need to do to bounds check object 
@@ -218,7 +214,7 @@ NULL:  ptr        -- Assuming that I have this at all...
 
 ---- Explicit versus Implicit typing ----
 
-Parameters require explicit types, or must be id references in Fluorite code, 
+Parameters require explicit types, or must be references in Fluorite code, 
 since they cannot have default values without the default value emitted and
 passed by the caller during compilation. Return types are the same as parameters.
 
@@ -244,9 +240,9 @@ object initialization strategy is designed to not require this, but it may be
 useful when detecting what has or has not been initialized in complex objects.
 
 
----- The Object Type vs The id Type ----
+---- The Object Type vs The ref Type ----
 
-It occurs to me that the id type is the general catch all id reference type 
+It occurs to me that the ref type is the general catch all reference type 
 for Fluorite code, similar to Objective-C, and for similar reasons. Like
 Objective-C, most code will generally choose to specify Object rather than id
 directly, but sometimes there isn't a particular reason to specify any actual
@@ -259,9 +255,9 @@ If we generally expect all reasonable objects to mixin Object that behave in
 any particularly reasonable fashion, then typing to Object as the basic type
 makes sense, similar to most Objective-C or Java programs. On the other hand
 some code may have absolutely no interest in what object is present and that
-may continue to use id as in Objective-C also.
+code may use ref similar to id in Objective-C.
 
-This suggests that figuring out whether to use id or Object may not always
+This suggests that figuring out whether to use ref or Object may not always
 be completely trivial, but I think that its probably simple enough that it
 shouldn't cause any real problems. For the most part, since all instantiable
 objects mixin Object anyway, it probably doesn't actually matter.

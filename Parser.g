@@ -27,6 +27,7 @@ grammar Parser {
   declaration
     = letDeclaration
     | classDeclaration
+    | procDeclaration
     | structDeclaration
     | functionDeclaration
     ;
@@ -49,6 +50,11 @@ grammar Parser {
       ( ( behavior ; t(";") )*:bs t(";")? t("LINE_TERMINATOR") !bs )*:bss
       t("DEDENT") t("}")
       !bss.flat()
+    ;
+  
+  procDeclaration
+    = id("proc"):q local:n p("[") ( local ; p(",") )*:ps vaparam:va p("]") fnbody:b
+      !{ tag: "ProcDeclaration", loc: q.loc, name: n.value, parameters: ps, vaparam: va, body: b }
     ;
   
   structDeclaration
@@ -87,11 +93,11 @@ grammar Parser {
     ;
   
   methodBehavior
-    = &t:q static:s visibility:v id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") p(":") type:r pbody:b
+    = &t:q visibility:v static:s id:n p("(") ( parameter ; p(",") )*:ps vaparam:va p(")") p(":") type:r pbody:b
       !{ tag: "MethodBehavior", loc: q.loc, name: n.value, static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
-    | &t:q static:s visibility:v id:n                                                     p(":") type:r pbody:b
+    | &t:q visibility:v static:s id:n                                                     p(":") type:r pbody:b
       !{ tag: "MethodBehavior", loc: q.loc, name: n.value, static: s, visibility: v, parameters: [], vaparam: false, rtype: r, body: b }
-    | &t:q static:s visibility:v      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r pbody:b
+    | &t:q visibility:v static:s      p("[") ( parameter ; p(",") )*:ps vaparam:va p("]") p(":") type:r pbody:b
       !{ tag: "MethodBehavior", loc: q.loc, name: "apply", static: s, visibility: v, parameters: ps, vaparam: va, rtype: r, body: b }
     ;
   
@@ -295,10 +301,11 @@ grammar Parser {
   
   secondaryExpression
     = primaryExpression:e
-      ( p(".") id:n                               !{ tag: "FieldExpression", loc: e.loc, subject: e, name: n.value }:e
-      | p("[") ( expression ; p(",") )*:as p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e, arguments: as }:e
-      | p("[") ( keyval     ; p(",") )*:as p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e, arguments: as }:e
-      | p("{") ( expression ; p(",") )*:as p("}") !{ tag: "SpecExpression",  loc: e.loc, subject: e, arguments: as }:e
+      ( p(".") id:n p("(") elist:as p(")")  !{ tag: "SendExpression",  loc: e.loc, receiver: e, selector: n.value, arguments: as }:e
+      | p(".") id:n                         !{ tag: "FieldExpression", loc: e.loc, subject: e,  name: n.value }:e
+      |             p("[") elist:as  p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e,  arguments: as }:e
+      |             p("[") kvlist:as p("]") !{ tag: "CallExpression",  loc: e.loc, subject: e,  arguments: as }:e
+      |             p("{") elist:as  p("}") !{ tag: "SpecExpression",  loc: e.loc, subject: e,  arguments: as }:e
       )*
       !e
     ;
@@ -306,7 +313,8 @@ grammar Parser {
   primaryExpression
     = p("(") expression:a p(")") !a
     
-    | local:n !{ tag: "LookupExpression", loc: n.loc, name: n.value }
+    | local:n p("(") elist:as p(")") !{ tag: "LookupExpression", loc: n.loc, name: n.value, arguments: as }
+    | local:n                        !{ tag: "LookupExpression", loc: n.loc, name: n.value, arguments: null }
     
     // | p("["):q expression:i p("..") expression:f p("]") !{ tag: "IntervalExpression", loc: q.loc, initial: { closed: i }, final: { closed: f } }
     // | p("["):q expression:i p("..") expression:f p(")") !{ tag: "IntervalExpression", loc: q.loc, initial: { closed: i }, final: { open:   f } }
@@ -356,6 +364,21 @@ grammar Parser {
   tagbody(tag)
     = t("LINE_TERMINATOR")?
       id(tag) expression
+    ;
+  
+  elist
+    = ( expression ; p(",") )*:es p(",")? !es
+    | t("INDENT")
+      ( ( expression ; p(",") )*:es p(",")? t("LINE_TERMINATOR") !es )*:ess
+      t("DEDENT")
+      !ess.flat()
+    ;
+  kvlist
+    = ( keyval ; p(",") )*:kvs p(",")? !es
+    | t("INDENT")
+      ( ( keyval ; p(",") )*:kvs p(",")? t("LINE_TERMINATOR") !kvs )*:kvss
+      t("DEDENT")
+      !kvss.flat()
     ;
   
   

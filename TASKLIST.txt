@@ -1,5 +1,15 @@
 TASKLIST
 
+- Setup the command properly to take the appropriate options rather than
+	hardcoding everything into the driver program directly.
+- The fluorite command should provide a --main option that specifies a package or
+	module that should be compiled, providing a principle object that is a main proc.
+- The fluorite command should provide a --library option that specifies that the
+	output should be intended for linking into a dynamically linked library and not
+	an main executable. Only one Fluorite compilation unit is allowed per library.
+- Eventually the maroon command will just be a link to the Fluorite compiler;
+	there should be an option that turns off Fluorite support completely.
+
 - Initialization of array null initialization should be based on a proper loop and
 	not an unrolled loop. Otherwise large arrays would be uninitializable for the
 	most part (without excessive codegen).

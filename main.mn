@@ -1,5 +1,5 @@
 --
--- Test program.
+-- Test Maroon Program
 --
 
 fn printf[string: ptr{i8}, ...]: i32
